@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "es2021",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "baseUrl": "./",
+    "paths": { "#/*": ["src/*", "dist/*"] },
+
+    "strict": true,
+
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+
+    "skipLibCheck": true,
+
+    "incremental": false
+  },
+  "include": ["src/**/*", "__e2e__/**/*"]
+}
