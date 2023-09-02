@@ -5,7 +5,7 @@ import { TaskItem } from '#/core/data/task-item';
 import {
   CanFindTasks,
   CanInsertTask,
-  CanMarkTaskAsDone,
+  CanSetTaskState,
   CanRemoveTask,
   CanUpdateTask,
 } from '#/dependencies';
@@ -14,7 +14,7 @@ export const createInMemoryStorage = (): CanFindTasks &
   CanInsertTask &
   CanRemoveTask &
   CanUpdateTask &
-  CanMarkTaskAsDone => {
+  CanSetTaskState => {
   const tasksMap = new Map<string, TaskItem>();
 
   return {
@@ -36,11 +36,11 @@ export const createInMemoryStorage = (): CanFindTasks &
         })),
         TE.tap((item) => TE.of(tasksMap.set(item.id, item))),
       ),
-    markAsDone: (taskId) =>
+    setTaskState: (taskId, { isDone }) =>
       pipe(
         tasksMap.get(taskId),
         TE.fromNullable(new Error('Not found')),
-        TE.map((existing) => ({ ...existing, isDone: true })),
+        TE.map((existing) => ({ ...existing, isDone })),
         TE.tap((item) => TE.of(tasksMap.set(item.id, item))),
       ),
   };

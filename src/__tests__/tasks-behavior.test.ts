@@ -7,6 +7,7 @@ import { createInMemoryStorage } from '#/devices/in-memory-storage';
 import { editTaskUseCase } from '#/edit-task.use-case';
 import { finishTaskUseCase } from '#/finish-task.use-case';
 import { getTasksUseCase } from '#/get-tasks.use-case';
+import { reopenTaskUseCase } from '#/reopen-task.use-case';
 import { promiseFromTaskEither } from '#/utils/transformations';
 
 test('can add new task', async () => {
@@ -66,7 +67,7 @@ test('can edit task', async () => {
   ]);
 });
 
-test('can mark task as done', async () => {
+test('can finish task', async () => {
   const storage = createInMemoryStorage();
 
   await expect(
@@ -74,7 +75,7 @@ test('can mark task as done', async () => {
       { title: 'new task title' },
       addTaskUseCase(storage),
       TE.map((item) => item.id),
-      TE.flatMap(finishTaskUseCase(storage)),
+      TE.tap(finishTaskUseCase(storage)),
       TE.flatMap(getTasksUseCase(storage)),
       promiseFromTaskEither,
     ),
@@ -84,6 +85,29 @@ test('can mark task as done', async () => {
       title: 'new task title',
       notes: '',
       isDone: true,
+    },
+  ]);
+});
+
+test('can reopen task', async () => {
+  const storage = createInMemoryStorage();
+
+  await expect(
+    pipe(
+      { title: 'new task title' },
+      addTaskUseCase(storage),
+      TE.map((item) => item.id),
+      TE.tap(finishTaskUseCase(storage)),
+      TE.tap(reopenTaskUseCase(storage)),
+      TE.flatMap(getTasksUseCase(storage)),
+      promiseFromTaskEither,
+    ),
+  ).resolves.toEqual([
+    {
+      id: expect.any(String),
+      title: 'new task title',
+      notes: '',
+      isDone: false,
     },
   ]);
 });

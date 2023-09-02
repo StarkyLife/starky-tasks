@@ -1,3 +1,4 @@
-import { CanMarkTaskAsDone } from './dependencies';
+import { CanSetTaskState } from './dependencies';
 
-export const finishTaskUseCase = (deps: CanMarkTaskAsDone) => deps.markAsDone;
+export const finishTaskUseCase = (deps: CanSetTaskState) => (taskId: string) =>
+  deps.setTaskState(taskId, { isDone: true });

@@ -17,6 +17,6 @@ export type CanUpdateTask = {
   updateTask: (taskItem: TaskUpdateData) => TE.TaskEither<Error, TaskItem>;
 };
 
-export type CanMarkTaskAsDone = {
-  markAsDone: (taskId: string) => TE.TaskEither<Error, TaskItem>;
+export type CanSetTaskState = {
+  setTaskState: (taskId: string, state: { isDone: boolean }) => TE.TaskEither<Error, TaskItem>;
 };
