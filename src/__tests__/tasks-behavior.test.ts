@@ -1,4 +1,5 @@
 import { pipe } from 'fp-ts/function';
+import * as O from 'fp-ts/Option';
 import * as TE from 'fp-ts/TaskEither';
 import { addTaskUseCase } from '#/add-task.use-case';
 import { deleteTaskUseCase } from '#/delete-task.use-case';
@@ -22,6 +23,7 @@ test('can add new task', async () => {
     {
       id: expect.any(String),
       title: 'new task title',
+      notes: '',
       isDone: false,
     },
   ]);
@@ -49,7 +51,7 @@ test('can edit task', async () => {
     pipe(
       { title: 'new task title' },
       addTaskUseCase(storage),
-      TE.map((item) => ({ id: item.id, title: 'editted title' })),
+      TE.map((item) => ({ id: item.id, title: O.some('editted title'), notes: O.some('notes') })),
       TE.flatMap(editTaskUseCase(storage)),
       TE.flatMap(getTasksUseCase(storage)),
       promiseFromTaskEither,
@@ -58,6 +60,7 @@ test('can edit task', async () => {
     {
       id: expect.any(String),
       title: 'editted title',
+      notes: 'notes',
       isDone: false,
     },
   ]);
@@ -79,6 +82,7 @@ test('can mark task as done', async () => {
     {
       id: expect.any(String),
       title: 'new task title',
+      notes: '',
       isDone: true,
     },
   ]);
