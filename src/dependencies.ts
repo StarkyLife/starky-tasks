@@ -1,12 +1,23 @@
 import * as TE from 'fp-ts/TaskEither';
-import { TaskCreationData, TaskItem, TaskUpdateData } from './core/data/task-item';
+import {
+  TaskCreationData,
+  TaskItemDetails,
+  TaskItemShort,
+  TaskNotesUpdateData,
+  TaskStateUpdateData,
+  TaskUpdateData,
+} from './core/data/task-item';
 
 export type CanFindTasks = {
-  findTasks: () => TE.TaskEither<Error, TaskItem[]>;
+  findTasks: () => TE.TaskEither<Error, TaskItemShort[]>;
+};
+
+export type CanGetTaskById = {
+  getTaskById: (taskId: string) => TE.TaskEither<Error, TaskItemDetails>;
 };
 
 export type CanInsertTask = {
-  insertTask: (taskData: TaskCreationData) => TE.TaskEither<Error, TaskItem>;
+  insertTask: (taskData: TaskCreationData) => TE.TaskEither<Error, TaskItemShort>;
 };
 
 export type CanRemoveTask = {
@@ -14,9 +25,13 @@ export type CanRemoveTask = {
 };
 
 export type CanUpdateTask = {
-  updateTask: (taskItem: TaskUpdateData) => TE.TaskEither<Error, TaskItem>;
+  updateTask: (taskItem: TaskUpdateData) => TE.TaskEither<Error, TaskItemShort>;
+};
+
+export type CanUpdateTaskNotes = {
+  updateTaskNotes: (data: TaskNotesUpdateData) => TE.TaskEither<Error, TaskItemDetails>;
 };
 
 export type CanSetTaskState = {
-  setTaskState: (taskId: string, state: { isDone: boolean }) => TE.TaskEither<Error, TaskItem>;
+  setTaskState: (data: TaskStateUpdateData) => TE.TaskEither<Error, TaskItemShort>;
 };
