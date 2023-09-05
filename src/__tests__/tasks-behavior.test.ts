@@ -1,4 +1,5 @@
 import { pipe } from 'fp-ts/function';
+import * as O from 'fp-ts/Option';
 import * as TE from 'fp-ts/TaskEither';
 import { addTaskUseCase } from '#/add-task.use-case';
 import { deleteTaskUseCase } from '#/delete-task.use-case';
@@ -16,7 +17,7 @@ test('can add new task', async () => {
 
   await expect(
     pipe(
-      { title: 'new task title' },
+      'new task title',
       addTaskUseCase(storage),
       TE.flatMap(getTasksUseCase(storage)),
       promiseFromTaskEither,
@@ -35,7 +36,7 @@ test('can delete task', async () => {
 
   await expect(
     pipe(
-      { title: 'new task title' },
+      'new task title',
       addTaskUseCase(storage),
       TE.map((item) => item.id),
       TE.flatMap(deleteTaskUseCase(storage)),
@@ -50,7 +51,7 @@ test('can edit task', async () => {
 
   await expect(
     pipe(
-      { title: 'new task title' },
+      'new task title',
       addTaskUseCase(storage),
       TE.map((item) => ({ id: item.id, title: 'editted title' })),
       TE.flatMap(editTaskUseCase(storage)),
@@ -66,15 +67,13 @@ test('can edit task', async () => {
   ]);
 });
 
-test('can edit task notes', async () => {
+test('can get task details', async () => {
   const storage = createInMemoryStorage();
 
   await expect(
     pipe(
-      { title: 'new task title' },
+      'new task title',
       addTaskUseCase(storage),
-      TE.map((item) => ({ id: item.id, notes: 'editted notes' })),
-      TE.flatMap(editTaskNotesUseCase(storage)),
       TE.map((item) => item.id),
       TE.flatMap(getTaskDetailsUseCase(storage)),
       promiseFromTaskEither,
@@ -82,7 +81,28 @@ test('can edit task notes', async () => {
   ).resolves.toEqual({
     id: expect.any(String),
     title: 'new task title',
-    notes: 'editted notes',
+    notes: O.none,
+    isDone: false,
+  });
+});
+
+test('can edit task notes', async () => {
+  const storage = createInMemoryStorage();
+
+  await expect(
+    pipe(
+      'new task title',
+      addTaskUseCase(storage),
+      TE.map((item) => ({ id: item.id, notes: 'editted notes' })),
+      TE.tap(editTaskNotesUseCase(storage)),
+      TE.map((item) => item.id),
+      TE.flatMap(getTaskDetailsUseCase(storage)),
+      promiseFromTaskEither,
+    ),
+  ).resolves.toEqual({
+    id: expect.any(String),
+    title: 'new task title',
+    notes: O.some('editted notes'),
     isDone: false,
   });
 });
@@ -92,7 +112,7 @@ test('can finish task', async () => {
 
   await expect(
     pipe(
-      { title: 'new task title' },
+      'new task title',
       addTaskUseCase(storage),
       TE.map((item) => item.id),
       TE.tap(finishTaskUseCase(storage)),
@@ -113,7 +133,7 @@ test('can reopen task', async () => {
 
   await expect(
     pipe(
-      { title: 'new task title' },
+      'new task title',
       addTaskUseCase(storage),
       TE.map((item) => item.id),
       TE.tap(finishTaskUseCase(storage)),

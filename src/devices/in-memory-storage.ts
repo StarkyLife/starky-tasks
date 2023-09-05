@@ -1,23 +1,22 @@
 import { constVoid, constant, pipe } from 'fp-ts/function';
+import * as O from 'fp-ts/Option';
 import * as TE from 'fp-ts/TaskEither';
-import { TaskItemDetails, TaskItemShort } from '#/core/data/task-item';
+import { TaskItemShort, TaskSaveData } from '#/core/data/task-item';
 import {
   CanFindTasks,
-  CanInsertTask,
-  CanSetTaskState,
+  CanSaveTask,
   CanRemoveTask,
-  CanUpdateTask,
   CanUpdateTaskNotes,
   CanGetTaskById,
+  CanGetTaskNotes,
 } from '#/dependencies';
 
 type InMemoryStorage = CanFindTasks &
   CanGetTaskById &
-  CanInsertTask &
+  CanSaveTask &
   CanRemoveTask &
-  CanUpdateTask &
-  CanUpdateTaskNotes &
-  CanSetTaskState;
+  CanGetTaskNotes &
+  CanUpdateTaskNotes;
 
 export const createInMemoryStorage = (): InMemoryStorage => {
   const tasksMap = new Map<string, TaskItemShort>();
@@ -25,18 +24,25 @@ export const createInMemoryStorage = (): InMemoryStorage => {
 
   return {
     findTasks: () => TE.of(Array.from(tasksMap.values())),
-    getTaskById: (id) =>
+    getTaskById: (id) => pipe(tasksMap.get(id), TE.fromNullable(new Error('Not found'))),
+    saveTask: (taskData: TaskSaveData) =>
       pipe(
-        TE.Do,
-        TE.bind('item', constant(pipe(tasksMap.get(id), TE.fromNullable(new Error('Not found'))))),
-        TE.bind('notes', constant(pipe(notesMap.get(id), TE.fromNullable(new Error('Not found'))))),
-        TE.map(({ item, notes }): TaskItemDetails => ({ ...item, notes })),
-      ),
-    insertTask: (taskData) =>
-      pipe(
-        TE.of({ id: taskData.title + '_id', isDone: false, ...taskData }),
+        taskData.id,
+        O.flatMap((id) => pipe(tasksMap.get(id), O.fromNullable)),
+        O.getOrElse(
+          constant<TaskItemShort>({
+            id: taskData.title + '_id',
+            title: '',
+            isDone: false,
+          }),
+        ),
+        (existing) =>
+          TE.of<Error, TaskItemShort>({
+            ...existing,
+            title: pipe(taskData.title, O.getOrElse(constant(existing.title))),
+            isDone: pipe(taskData.isDone, O.getOrElse(constant(existing.isDone))),
+          }),
         TE.tap((item) => TE.of(tasksMap.set(item.id, item))),
-        TE.tap((item) => TE.of(notesMap.set(item.id, ''))),
       ),
     removeTask: (taskId) =>
       pipe(
@@ -44,26 +50,13 @@ export const createInMemoryStorage = (): InMemoryStorage => {
         TE.map(constant(notesMap.delete(taskId))),
         TE.map(constVoid),
       ),
-    updateTask: ({ id, title }) =>
-      pipe(
-        tasksMap.get(id),
-        TE.fromNullable(new Error('Not found')),
-        TE.map((existing) => ({ ...existing, title })),
-        TE.tap((item) => TE.of(tasksMap.set(item.id, item))),
-      ),
+    getTaskNotes: (taskId) => pipe(notesMap.get(taskId), O.fromNullable, TE.of),
     updateTaskNotes: ({ id, notes }) =>
       pipe(
         tasksMap.get(id),
         TE.fromNullable(new Error('Not found')),
         TE.tap(constant(TE.of(notesMap.set(id, notes)))),
-        TE.map((item): TaskItemDetails => ({ ...item, notes })),
-      ),
-    setTaskState: ({ id, isDone }) =>
-      pipe(
-        tasksMap.get(id),
-        TE.fromNullable(new Error('Not found')),
-        TE.map((existing) => ({ ...existing, isDone })),
-        TE.tap((item) => TE.of(tasksMap.set(item.id, item))),
+        TE.map(constVoid),
       ),
   };
 };

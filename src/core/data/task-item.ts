@@ -1,3 +1,5 @@
+import * as O from 'fp-ts/Option';
+
 export type TaskItemShort = {
   id: string;
   title: string;
@@ -7,12 +9,14 @@ export type TaskItemShort = {
 export type TaskItemDetails = {
   id: string;
   title: string;
-  notes: string;
+  notes: O.Option<string>;
   isDone: boolean;
 };
 
-export type TaskCreationData = {
-  title: string;
+export type TaskSaveData = {
+  id: O.Option<string>;
+  title: O.Option<string>;
+  isDone: O.Option<boolean>;
 };
 
 export type TaskUpdateData = {
@@ -23,9 +27,4 @@ export type TaskUpdateData = {
 export type TaskNotesUpdateData = {
   id: string;
   notes: string;
-};
-
-export type TaskStateUpdateData = {
-  id: string;
-  isDone: boolean;
 };
