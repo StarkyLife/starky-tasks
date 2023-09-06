@@ -1,6 +1,6 @@
 import * as O from 'fp-ts/Option';
 import * as TE from 'fp-ts/TaskEither';
-import { TaskSaveData, TaskItemShort, TaskNotesUpdateData } from './core/data/task-item';
+import { TaskSaveData, TaskItemShort, TaskNotesUpdateData } from '#/core/data/task-item';
 
 export type CanFindTasks = {
   findTasks: () => TE.TaskEither<Error, TaskItemShort[]>;

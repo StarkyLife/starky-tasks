@@ -1,7 +1,6 @@
 import { constVoid, constant, pipe } from 'fp-ts/function';
 import * as O from 'fp-ts/Option';
 import * as TE from 'fp-ts/TaskEither';
-import { TaskItemShort, TaskSaveData } from '#/core/data/task-item';
 import {
   CanFindTasks,
   CanSaveTask,
@@ -9,7 +8,8 @@ import {
   CanUpdateTaskNotes,
   CanGetTaskById,
   CanGetTaskNotes,
-} from '#/dependencies';
+} from '#/application/dependencies';
+import { TaskItemShort, TaskSaveData } from '#/core/data/task-item';
 
 type InMemoryStorage = CanFindTasks &
   CanGetTaskById &

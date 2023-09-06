@@ -1,3 +1,3 @@
-import { CanFindTasks } from './dependencies';
+import { CanFindTasks } from '../dependencies';
 
 export const getTasksUseCase = (deps: CanFindTasks) => deps.findTasks;

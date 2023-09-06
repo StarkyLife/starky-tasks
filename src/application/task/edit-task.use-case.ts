@@ -1,6 +1,6 @@
 import * as O from 'fp-ts/Option';
-import { TaskUpdateData } from './core/data/task-item';
-import { CanSaveTask } from './dependencies';
+import { TaskUpdateData } from '#/core/data/task-item';
+import { CanSaveTask } from '../dependencies';
 
 export const editTaskUseCase =
   (deps: CanSaveTask) =>

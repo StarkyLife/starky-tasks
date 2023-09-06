@@ -1,15 +1,15 @@
 import { pipe } from 'fp-ts/function';
 import * as O from 'fp-ts/Option';
 import * as TE from 'fp-ts/TaskEither';
-import { addTaskUseCase } from '#/add-task.use-case';
-import { deleteTaskUseCase } from '#/delete-task.use-case';
+import { addTaskUseCase } from '#/application/task/add-task.use-case';
+import { deleteTaskUseCase } from '#/application/task/delete-task.use-case';
+import { editTaskNotesUseCase } from '#/application/task/edit-task-notes.use-case';
+import { editTaskUseCase } from '#/application/task/edit-task.use-case';
+import { finishTaskUseCase } from '#/application/task/finish-task.use-case';
+import { getTaskDetailsUseCase } from '#/application/task/get-task-details.use-case';
+import { getTasksUseCase } from '#/application/task/get-tasks.use-case';
+import { reopenTaskUseCase } from '#/application/task/reopen-task.use-case';
 import { createInMemoryStorage } from '#/devices/in-memory-storage';
-import { editTaskNotesUseCase } from '#/edit-task-notes.use-case';
-import { editTaskUseCase } from '#/edit-task.use-case';
-import { finishTaskUseCase } from '#/finish-task.use-case';
-import { getTaskDetailsUseCase } from '#/get-task-details.use-case';
-import { getTasksUseCase } from '#/get-tasks.use-case';
-import { reopenTaskUseCase } from '#/reopen-task.use-case';
 import { promiseFromTaskEither } from '#/utils/transformations';
 
 test('can add new task', async () => {

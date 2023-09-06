@@ -1,7 +1,7 @@
 import { pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
-import { TaskItemDetails } from './core/data/task-item';
-import { CanGetTaskById, CanGetTaskNotes } from './dependencies';
+import { TaskItemDetails } from '#/core/data/task-item';
+import { CanGetTaskById, CanGetTaskNotes } from '../dependencies';
 
 export const getTaskDetailsUseCase =
   (deps: CanGetTaskById & CanGetTaskNotes) =>
