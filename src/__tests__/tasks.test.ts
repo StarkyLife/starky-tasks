@@ -9,11 +9,12 @@ import { finishTaskUseCase } from '#/application/task/finish-task.use-case';
 import { getTaskDetailsUseCase } from '#/application/task/get-task-details.use-case';
 import { getTasksUseCase } from '#/application/task/get-tasks.use-case';
 import { reopenTaskUseCase } from '#/application/task/reopen-task.use-case';
-import { createInMemoryStorage } from '#/devices/in-memory-storage';
+import { createInMemoryTaskStorage } from '#/devices/in-memory-task-storage';
 import { promiseFromTaskEither } from '#/utils/transformations';
+import { createDefaultTask } from './fixtures/task';
 
 test('can add new task', async () => {
-  const storage = createInMemoryStorage();
+  const storage = createInMemoryTaskStorage(O.none);
 
   await expect(
     pipe(
@@ -32,14 +33,13 @@ test('can add new task', async () => {
 });
 
 test('can delete task', async () => {
-  const storage = createInMemoryStorage();
+  const defaultTask = createDefaultTask();
+  const storage = createInMemoryTaskStorage(O.some([defaultTask]));
 
   await expect(
     pipe(
-      'new task title',
-      addTaskUseCase(storage),
-      TE.map((item) => item.id),
-      TE.flatMap(deleteTaskUseCase(storage)),
+      defaultTask.id,
+      deleteTaskUseCase(storage),
       TE.flatMap(getTasksUseCase(storage)),
       promiseFromTaskEither,
     ),
@@ -47,104 +47,87 @@ test('can delete task', async () => {
 });
 
 test('can edit task', async () => {
-  const storage = createInMemoryStorage();
+  const defaultTask = createDefaultTask({ title: 'initial title' });
+  const storage = createInMemoryTaskStorage(O.some([defaultTask]));
 
   await expect(
     pipe(
-      'new task title',
-      addTaskUseCase(storage),
-      TE.map((item) => ({ id: item.id, title: 'editted title' })),
-      TE.flatMap(editTaskUseCase(storage)),
+      { id: defaultTask.id, title: 'editted title' },
+      editTaskUseCase(storage),
       TE.flatMap(getTasksUseCase(storage)),
       promiseFromTaskEither,
     ),
   ).resolves.toEqual([
     {
-      id: expect.any(String),
+      ...defaultTask,
       title: 'editted title',
-      isDone: false,
     },
   ]);
 });
 
 test('can get task details', async () => {
-  const storage = createInMemoryStorage();
+  const defaultTask = createDefaultTask();
+  const storage = createInMemoryTaskStorage(O.some([defaultTask]));
 
   await expect(
-    pipe(
-      'new task title',
-      addTaskUseCase(storage),
-      TE.map((item) => item.id),
-      TE.flatMap(getTaskDetailsUseCase(storage)),
-      promiseFromTaskEither,
-    ),
+    pipe(defaultTask.id, getTaskDetailsUseCase(storage), promiseFromTaskEither),
   ).resolves.toEqual({
-    id: expect.any(String),
-    title: 'new task title',
+    ...defaultTask,
     notes: O.none,
-    isDone: false,
   });
 });
 
 test('can edit task notes', async () => {
-  const storage = createInMemoryStorage();
+  const defaultTask = createDefaultTask();
+  const storage = createInMemoryTaskStorage(O.some([defaultTask]));
 
   await expect(
     pipe(
-      'new task title',
-      addTaskUseCase(storage),
-      TE.map((item) => ({ id: item.id, notes: 'editted notes' })),
-      TE.tap(editTaskNotesUseCase(storage)),
-      TE.map((item) => item.id),
+      { id: defaultTask.id, notes: 'editted notes' },
+      editTaskNotesUseCase(storage),
+      TE.map(() => defaultTask.id),
       TE.flatMap(getTaskDetailsUseCase(storage)),
       promiseFromTaskEither,
     ),
   ).resolves.toEqual({
-    id: expect.any(String),
-    title: 'new task title',
+    ...defaultTask,
     notes: O.some('editted notes'),
-    isDone: false,
   });
 });
 
 test('can finish task', async () => {
-  const storage = createInMemoryStorage();
+  const defaultTask = createDefaultTask({ isDone: false });
+  const storage = createInMemoryTaskStorage(O.some([defaultTask]));
 
   await expect(
     pipe(
-      'new task title',
-      addTaskUseCase(storage),
-      TE.map((item) => item.id),
-      TE.tap(finishTaskUseCase(storage)),
+      defaultTask.id,
+      finishTaskUseCase(storage),
       TE.flatMap(getTasksUseCase(storage)),
       promiseFromTaskEither,
     ),
   ).resolves.toEqual([
     {
-      id: expect.any(String),
-      title: 'new task title',
+      ...defaultTask,
       isDone: true,
     },
   ]);
 });
 
 test('can reopen task', async () => {
-  const storage = createInMemoryStorage();
+  const defaultTask = createDefaultTask({ isDone: true });
+  const storage = createInMemoryTaskStorage(O.some([defaultTask]));
 
   await expect(
     pipe(
-      'new task title',
-      addTaskUseCase(storage),
-      TE.map((item) => item.id),
-      TE.tap(finishTaskUseCase(storage)),
-      TE.tap(reopenTaskUseCase(storage)),
+      defaultTask.id,
+      reopenTaskUseCase(storage),
       TE.flatMap(getTasksUseCase(storage)),
       promiseFromTaskEither,
     ),
   ).resolves.toEqual([
     {
-      id: expect.any(String),
-      title: 'new task title',
+      ...defaultTask,
       isDone: false,
     },
   ]);

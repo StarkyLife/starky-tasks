@@ -1,3 +1,4 @@
+import * as A from 'fp-ts/Array';
 import { constVoid, constant, pipe } from 'fp-ts/function';
 import * as O from 'fp-ts/Option';
 import * as TE from 'fp-ts/TaskEither';
@@ -11,15 +12,22 @@ import {
 } from '#/application/dependencies';
 import { TaskItemShort, TaskSaveData } from '#/core/data/task-item';
 
-type InMemoryStorage = CanFindTasks &
+type InMemoryTaskStorage = CanFindTasks &
   CanGetTaskById &
   CanSaveTask &
   CanRemoveTask &
   CanGetTaskNotes &
   CanUpdateTaskNotes;
 
-export const createInMemoryStorage = (): InMemoryStorage => {
-  const tasksMap = new Map<string, TaskItemShort>();
+export const createInMemoryTaskStorage = (seed: O.Option<TaskItemShort[]>): InMemoryTaskStorage => {
+  const tasksMap = pipe(
+    seed,
+    O.map(A.map((s): [string, TaskItemShort] => [s.id, s])),
+    O.match(
+      () => new Map<string, TaskItemShort>(),
+      (s) => new Map<string, TaskItemShort>(s),
+    ),
+  );
   const notesMap = new Map<string, string>();
 
   return {
