@@ -1,5 +1,5 @@
 import * as A from 'fp-ts/Array';
-import { constVoid, constant, pipe } from 'fp-ts/function';
+import { flow, constVoid, constant, pipe } from 'fp-ts/function';
 import * as O from 'fp-ts/Option';
 import * as TE from 'fp-ts/TaskEither';
 import {
@@ -31,39 +31,52 @@ export const createInMemoryTaskStorage = (seed: O.Option<TaskItemShort[]>): InMe
   const contentMap = new Map<string, string>();
 
   return {
-    findTasks: () => TE.of(Array.from(tasksMap.values())),
-    getTaskById: (id) => pipe(tasksMap.get(id), TE.fromNullable(new Error('Not found'))),
+    findTasks: () =>
+      pipe(
+        TE.Do,
+        TE.map(() => Array.from(tasksMap.values())),
+      ),
+    getTaskById: flow(
+      TE.of,
+      TE.flatMap((id) => pipe(tasksMap.get(id), TE.fromNullable(new Error('Not found')))),
+    ),
     saveTask: (taskData: TaskSaveData) =>
       pipe(
-        taskData.id,
-        O.flatMap((id) => pipe(tasksMap.get(id), O.fromNullable)),
-        O.getOrElse(
-          constant<TaskItemShort>({
-            id: taskData.title + '_id',
-            title: '',
-            isDone: false,
-          }),
+        TE.of(taskData.id),
+        TE.map(
+          flow(
+            O.flatMap((id) => pipe(tasksMap.get(id), O.fromNullable)),
+            O.getOrElse(
+              constant<TaskItemShort>({
+                id: taskData.title + '_id',
+                title: '',
+                isDone: false,
+              }),
+            ),
+          ),
         ),
-        (existing) =>
-          TE.of<Error, TaskItemShort>({
-            ...existing,
-            title: pipe(taskData.title, O.getOrElse(constant(existing.title))),
-            isDone: pipe(taskData.isDone, O.getOrElse(constant(existing.isDone))),
-          }),
+        TE.map((existing) => ({
+          ...existing,
+          title: pipe(taskData.title, O.getOrElse(constant(existing.title))),
+          isDone: pipe(taskData.isDone, O.getOrElse(constant(existing.isDone))),
+        })),
         TE.tap((item) => TE.of(tasksMap.set(item.id, item))),
       ),
     removeTask: (taskId) =>
       pipe(
-        TE.of(tasksMap.delete(taskId)),
-        TE.map(constant(contentMap.delete(taskId))),
+        TE.Do,
+        TE.map(() => tasksMap.delete(taskId)),
+        TE.map(() => contentMap.delete(taskId)),
         TE.map(constVoid),
       ),
-    getTaskContent: (taskId) => pipe(contentMap.get(taskId), O.fromNullable, TE.of),
+    getTaskContent: flow(
+      TE.of,
+      TE.map((id) => pipe(contentMap.get(id), O.fromNullable)),
+    ),
     updateTaskContent: ({ id, content }) =>
       pipe(
-        tasksMap.get(id),
-        TE.fromNullable(new Error('Not found')),
-        TE.tap(constant(TE.of(contentMap.set(id, content)))),
+        TE.Do,
+        TE.map(() => contentMap.set(id, content)),
         TE.map(constVoid),
       ),
   };
