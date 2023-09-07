@@ -19,6 +19,12 @@ type InMemoryTaskStorage = CanFindTasks &
   CanGetTaskContent &
   CanUpdateTaskContent;
 
+const emptyTask: TaskItemShort = {
+  id: '',
+  title: '',
+  isDone: false,
+};
+
 export const createInMemoryTaskStorage = (seed: O.Option<TaskItemShort[]>): InMemoryTaskStorage => {
   const tasksMap = pipe(
     seed,
@@ -45,14 +51,13 @@ export const createInMemoryTaskStorage = (seed: O.Option<TaskItemShort[]>): InMe
         TE.of(taskData.id),
         TE.map(
           flow(
-            O.flatMap((id) => pipe(tasksMap.get(id), O.fromNullable)),
-            O.getOrElse(
-              constant<TaskItemShort>({
-                id: taskData.title + '_id',
-                title: '',
-                isDone: false,
-              }),
+            O.map((id) =>
+              pipe(
+                O.fromNullable(tasksMap.get(id)),
+                O.getOrElse(constant<TaskItemShort>({ ...emptyTask, id })),
+              ),
             ),
+            O.getOrElse(constant<TaskItemShort>({ ...emptyTask, id: taskData.title + '_id' })),
           ),
         ),
         TE.map((existing) => ({

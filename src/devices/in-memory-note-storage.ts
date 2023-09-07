@@ -5,12 +5,25 @@ import * as TE from 'fp-ts/TaskEither';
 import {
   CanFindNotes,
   CanGetNoteById,
+  CanGetNoteContent,
   CanRemoveNote,
   CanSaveNote,
+  CanUpdateNoteContent,
 } from '#/application/dependencies';
 import { NoteItemShort } from '#/core/data/note-item';
 
-type InMemoryNoteStorage = CanFindNotes & CanGetNoteById & CanSaveNote & CanRemoveNote;
+type InMemoryNoteStorage = CanFindNotes &
+  CanGetNoteById &
+  CanSaveNote &
+  CanRemoveNote &
+  CanGetNoteContent &
+  CanUpdateNoteContent;
+
+const emptyNote: NoteItemShort = {
+  id: '',
+  title: '',
+  isArchived: false,
+};
 
 export const createInMemoryNoteStorage = (seed: O.Option<NoteItemShort[]>): InMemoryNoteStorage => {
   const notesMap = pipe(
@@ -21,6 +34,7 @@ export const createInMemoryNoteStorage = (seed: O.Option<NoteItemShort[]>): InMe
       (s) => new Map<string, NoteItemShort>(s),
     ),
   );
+  const contentMap = new Map<string, string>();
 
   return {
     findNotes: () =>
@@ -37,10 +51,13 @@ export const createInMemoryNoteStorage = (seed: O.Option<NoteItemShort[]>): InMe
         TE.of(data.id),
         TE.map(
           flow(
-            O.flatMap((id) => O.fromNullable(notesMap.get(id))),
-            O.getOrElse(
-              constant<NoteItemShort>({ id: data.title + '_id', title: '', isArchived: false }),
+            O.map((id) =>
+              pipe(
+                O.fromNullable(notesMap.get(id)),
+                O.getOrElse(constant<NoteItemShort>({ ...emptyNote, id })),
+              ),
             ),
+            O.getOrElse(constant<NoteItemShort>({ ...emptyNote, id: data.title + '_id' })),
           ),
         ),
         TE.map((existing) => ({
@@ -55,5 +72,15 @@ export const createInMemoryNoteStorage = (seed: O.Option<NoteItemShort[]>): InMe
       TE.map((id) => notesMap.delete(id)),
       TE.map(constVoid),
     ),
+    getNoteContent: flow(
+      TE.of,
+      TE.map((id) => pipe(contentMap.get(id), O.fromNullable)),
+    ),
+    updateNoteContent: ({ id, content }) =>
+      pipe(
+        TE.Do,
+        TE.map(() => contentMap.set(id, content)),
+        TE.map(constVoid),
+      ),
   };
 };

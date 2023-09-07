@@ -4,7 +4,9 @@ import * as TE from 'fp-ts/TaskEither';
 import { addNoteUseCase } from '#/application/note/add-note.use-case';
 import { archiveNoteUseCase } from '#/application/note/archive-note.use-case';
 import { deleteNoteUseCase } from '#/application/note/delete-note.use-case';
+import { editNoteContentUseCase } from '#/application/note/edit-note-content.use-case';
 import { editNoteUseCase } from '#/application/note/edit-note.use-case';
+import { getNoteDetailsUseCase } from '#/application/note/get-note-details.use-case';
 import { getNotesUseCase } from '#/application/note/get-notes.use-case';
 import { restoreNoteUseCase } from '#/application/note/restore-note.use-case';
 import { createInMemoryNoteStorage } from '#/devices/in-memory-note-storage';
@@ -99,4 +101,34 @@ test('can restore note', async () => {
       isArchived: false,
     },
   ]);
+});
+
+test("can get note's details", async () => {
+  const defaultNote = createDefaultNote();
+  const storage = createInMemoryNoteStorage(O.some([defaultNote]));
+
+  await expect(
+    pipe(defaultNote.id, getNoteDetailsUseCase(storage), promiseFromTaskEither),
+  ).resolves.toEqual({
+    ...defaultNote,
+    content: O.none,
+  });
+});
+
+test("can edit note's content", async () => {
+  const defaultNote = createDefaultNote();
+  const storage = createInMemoryNoteStorage(O.some([defaultNote]));
+
+  await expect(
+    pipe(
+      { id: defaultNote.id, content: 'editted content' },
+      editNoteContentUseCase(storage),
+      TE.map(() => defaultNote.id),
+      TE.flatMap(getNoteDetailsUseCase(storage)),
+      promiseFromTaskEither,
+    ),
+  ).resolves.toEqual({
+    ...defaultNote,
+    content: O.some('editted content'),
+  });
 });
