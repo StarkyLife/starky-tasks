@@ -3,7 +3,7 @@ import * as O from 'fp-ts/Option';
 import * as TE from 'fp-ts/TaskEither';
 import { addTaskUseCase } from '#/application/task/add-task.use-case';
 import { deleteTaskUseCase } from '#/application/task/delete-task.use-case';
-import { editTaskNotesUseCase } from '#/application/task/edit-task-notes.use-case';
+import { editTaskContentUseCase } from '#/application/task/edit-task-content.use-case';
 import { editTaskUseCase } from '#/application/task/edit-task.use-case';
 import { finishTaskUseCase } from '#/application/task/finish-task.use-case';
 import { getTaskDetailsUseCase } from '#/application/task/get-task-details.use-case';
@@ -73,25 +73,25 @@ test('can get task details', async () => {
     pipe(defaultTask.id, getTaskDetailsUseCase(storage), promiseFromTaskEither),
   ).resolves.toEqual({
     ...defaultTask,
-    notes: O.none,
+    content: O.none,
   });
 });
 
-test('can edit task notes', async () => {
+test('can edit task content', async () => {
   const defaultTask = createDefaultTask();
   const storage = createInMemoryTaskStorage(O.some([defaultTask]));
 
   await expect(
     pipe(
-      { id: defaultTask.id, notes: 'editted notes' },
-      editTaskNotesUseCase(storage),
+      { id: defaultTask.id, content: 'editted content' },
+      editTaskContentUseCase(storage),
       TE.map(() => defaultTask.id),
       TE.flatMap(getTaskDetailsUseCase(storage)),
       promiseFromTaskEither,
     ),
   ).resolves.toEqual({
     ...defaultTask,
-    notes: O.some('editted notes'),
+    content: O.some('editted content'),
   });
 });
 

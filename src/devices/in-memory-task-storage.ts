@@ -6,9 +6,9 @@ import {
   CanFindTasks,
   CanSaveTask,
   CanRemoveTask,
-  CanUpdateTaskNotes,
+  CanUpdateTaskContent,
   CanGetTaskById,
-  CanGetTaskNotes,
+  CanGetTaskContent,
 } from '#/application/dependencies';
 import { TaskItemShort, TaskSaveData } from '#/core/data/task-item';
 
@@ -16,8 +16,8 @@ type InMemoryTaskStorage = CanFindTasks &
   CanGetTaskById &
   CanSaveTask &
   CanRemoveTask &
-  CanGetTaskNotes &
-  CanUpdateTaskNotes;
+  CanGetTaskContent &
+  CanUpdateTaskContent;
 
 export const createInMemoryTaskStorage = (seed: O.Option<TaskItemShort[]>): InMemoryTaskStorage => {
   const tasksMap = pipe(
@@ -28,7 +28,7 @@ export const createInMemoryTaskStorage = (seed: O.Option<TaskItemShort[]>): InMe
       (s) => new Map<string, TaskItemShort>(s),
     ),
   );
-  const notesMap = new Map<string, string>();
+  const contentMap = new Map<string, string>();
 
   return {
     findTasks: () => TE.of(Array.from(tasksMap.values())),
@@ -55,15 +55,15 @@ export const createInMemoryTaskStorage = (seed: O.Option<TaskItemShort[]>): InMe
     removeTask: (taskId) =>
       pipe(
         TE.of(tasksMap.delete(taskId)),
-        TE.map(constant(notesMap.delete(taskId))),
+        TE.map(constant(contentMap.delete(taskId))),
         TE.map(constVoid),
       ),
-    getTaskNotes: (taskId) => pipe(notesMap.get(taskId), O.fromNullable, TE.of),
-    updateTaskNotes: ({ id, notes }) =>
+    getTaskContent: (taskId) => pipe(contentMap.get(taskId), O.fromNullable, TE.of),
+    updateTaskContent: ({ id, content }) =>
       pipe(
         tasksMap.get(id),
         TE.fromNullable(new Error('Not found')),
-        TE.tap(constant(TE.of(notesMap.set(id, notes)))),
+        TE.tap(constant(TE.of(contentMap.set(id, content)))),
         TE.map(constVoid),
       ),
   };

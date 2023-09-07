@@ -9,7 +9,7 @@ export type TaskItemShort = {
 export type TaskItemDetails = {
   id: string;
   title: string;
-  notes: O.Option<string>;
+  content: O.Option<string>;
   isDone: boolean;
 };
 
@@ -24,7 +24,7 @@ export type TaskUpdateData = {
   title: string;
 };
 
-export type TaskNotesUpdateData = {
+export type TaskContentUpdateData = {
   id: string;
-  notes: string;
+  content: string;
 };

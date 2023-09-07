@@ -1,18 +1,18 @@
 import * as O from 'fp-ts/Option';
 
-export type FolderItemShort = {
+export type NoteItemShort = {
   id: string;
-  name: string;
+  title: string;
   isArchived: boolean;
 };
 
-export type FolderSaveData = {
+export type NoteSaveData = {
   id: O.Option<string>;
-  name: O.Option<string>;
+  title: O.Option<string>;
   isArchived: O.Option<boolean>;
 };
 
-export type FolderUpdateData = {
+export type NoteUpdateData = {
   id: string;
-  name: string;
+  title: string;
 };
