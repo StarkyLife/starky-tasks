@@ -1,4 +1,4 @@
-import { pipe } from 'fp-ts/function';
+import { constant, pipe } from 'fp-ts/function';
 import * as O from 'fp-ts/Option';
 import * as TE from 'fp-ts/TaskEither';
 import { addTaskUseCase } from '#/application/task/add-task.use-case';
@@ -18,8 +18,9 @@ test('can add new task', async () => {
 
   await expect(
     pipe(
-      'new task title',
+      { title: 'new task title', parentTaskId: O.none },
       addTaskUseCase(storage),
+      TE.map(constant({ parentTaskId: O.none })),
       TE.flatMap(getTasksUseCase(storage)),
       promiseFromTaskEither,
     ),
@@ -28,6 +29,7 @@ test('can add new task', async () => {
       id: expect.any(String),
       title: 'new task title',
       isDone: false,
+      parentTaskId: O.none,
     },
   ]);
 });
@@ -40,6 +42,7 @@ test('can delete task', async () => {
     pipe(
       defaultTask.id,
       deleteTaskUseCase(storage),
+      TE.map(constant({ parentTaskId: O.none })),
       TE.flatMap(getTasksUseCase(storage)),
       promiseFromTaskEither,
     ),
@@ -54,6 +57,7 @@ test('can edit task', async () => {
     pipe(
       { id: defaultTask.id, title: 'editted title' },
       editTaskUseCase(storage),
+      TE.map(constant({ parentTaskId: O.none })),
       TE.flatMap(getTasksUseCase(storage)),
       promiseFromTaskEither,
     ),
@@ -74,6 +78,7 @@ test('can get task details', async () => {
   ).resolves.toEqual({
     ...defaultTask,
     content: O.none,
+    tasks: [],
   });
 });
 
@@ -92,6 +97,7 @@ test('can edit task content', async () => {
   ).resolves.toEqual({
     ...defaultTask,
     content: O.some('editted content'),
+    tasks: [],
   });
 });
 
@@ -103,6 +109,7 @@ test('can finish task', async () => {
     pipe(
       defaultTask.id,
       finishTaskUseCase(storage),
+      TE.map(constant({ parentTaskId: O.none })),
       TE.flatMap(getTasksUseCase(storage)),
       promiseFromTaskEither,
     ),
@@ -122,6 +129,7 @@ test('can reopen task', async () => {
     pipe(
       defaultTask.id,
       reopenTaskUseCase(storage),
+      TE.map(constant({ parentTaskId: O.none })),
       TE.flatMap(getTasksUseCase(storage)),
       promiseFromTaskEither,
     ),
@@ -131,4 +139,34 @@ test('can reopen task', async () => {
       isDone: false,
     },
   ]);
+});
+
+test('can add new task to existing task', async () => {
+  const defaultTask = createDefaultTask();
+  const storage = createInMemoryTaskStorage(O.some([defaultTask]));
+
+  await pipe(
+    { title: 'new task title', parentTaskId: O.some(defaultTask.id) },
+    addTaskUseCase(storage),
+    promiseFromTaskEither,
+  );
+
+  await expect(
+    pipe(defaultTask.id, getTaskDetailsUseCase(storage), promiseFromTaskEither),
+  ).resolves.toEqual({
+    ...defaultTask,
+    content: O.none,
+    tasks: [
+      {
+        id: expect.any(String),
+        title: 'new task title',
+        isDone: false,
+        parentTaskId: O.some(defaultTask.id),
+      },
+    ],
+  });
+
+  await expect(
+    pipe({ parentTaskId: O.none }, getTasksUseCase(storage), promiseFromTaskEither),
+  ).resolves.toEqual([defaultTask]);
 });

@@ -1,14 +1,16 @@
 import { pipe } from 'fp-ts/function';
+import * as O from 'fp-ts/Option';
 import * as TE from 'fp-ts/TaskEither';
 import { TaskItemDetails } from '#/core/data/task-item';
-import { CanGetTaskById, CanGetTaskContent } from '../dependencies';
+import { CanFindTasks, CanGetTaskById, CanGetTaskContent } from '../dependencies';
 
 export const getTaskDetailsUseCase =
-  (deps: CanGetTaskById & CanGetTaskContent) =>
+  (deps: CanGetTaskById & CanGetTaskContent & CanFindTasks) =>
   (taskId: string): TE.TaskEither<Error, TaskItemDetails> =>
     pipe(
       TE.Do,
       TE.bind('item', () => deps.getTaskById(taskId)),
       TE.bind('content', () => deps.getTaskContent(taskId)),
-      TE.map(({ item, content }): TaskItemDetails => ({ ...item, content })),
+      TE.bind('tasks', () => deps.findTasks({ parentTaskId: O.some(taskId) })),
+      TE.map(({ item, content, tasks }): TaskItemDetails => ({ ...item, content, tasks })),
     );

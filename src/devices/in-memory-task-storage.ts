@@ -1,20 +1,23 @@
 import * as A from 'fp-ts/Array';
 import { flow, constVoid, constant, pipe } from 'fp-ts/function';
 import * as O from 'fp-ts/Option';
+import * as S from 'fp-ts/string';
 import * as TE from 'fp-ts/TaskEither';
 import {
   CanFindTasks,
-  CanSaveTask,
+  CanCreateTask,
   CanRemoveTask,
   CanUpdateTaskContent,
   CanGetTaskById,
   CanGetTaskContent,
+  CanUpdateTask,
 } from '#/application/dependencies';
-import { TaskItemShort, TaskSaveData } from '#/core/data/task-item';
+import { TaskItemShort } from '#/core/data/task-item';
 
 type InMemoryTaskStorage = CanFindTasks &
   CanGetTaskById &
-  CanSaveTask &
+  CanCreateTask &
+  CanUpdateTask &
   CanRemoveTask &
   CanGetTaskContent &
   CanUpdateTaskContent;
@@ -23,6 +26,7 @@ const emptyTask: TaskItemShort = {
   id: '',
   title: '',
   isDone: false,
+  parentTaskId: O.none,
 };
 
 export const createInMemoryTaskStorage = (seed: O.Option<TaskItemShort[]>): InMemoryTaskStorage => {
@@ -37,33 +41,37 @@ export const createInMemoryTaskStorage = (seed: O.Option<TaskItemShort[]>): InMe
   const contentMap = new Map<string, string>();
 
   return {
-    findTasks: () =>
+    findTasks: (criteria) =>
       pipe(
         TE.Do,
         TE.map(() => Array.from(tasksMap.values())),
+        TE.map(
+          A.filter(({ parentTaskId }) => O.getEq(S.Eq).equals(parentTaskId, criteria.parentTaskId)),
+        ),
       ),
     getTaskById: flow(
       TE.of,
       TE.flatMap((id) => pipe(tasksMap.get(id), TE.fromNullable(new Error('Not found')))),
     ),
-    saveTask: (taskData: TaskSaveData) =>
+    createTask: ({ title, parentTaskId }) =>
       pipe(
-        TE.of(taskData.id),
-        TE.map(
-          flow(
-            O.map((id) =>
-              pipe(
-                O.fromNullable(tasksMap.get(id)),
-                O.getOrElse(constant<TaskItemShort>({ ...emptyTask, id })),
-              ),
-            ),
-            O.getOrElse(constant<TaskItemShort>({ ...emptyTask, id: taskData.title + '_id' })),
-          ),
-        ),
+        TE.of<Error, TaskItemShort>({
+          ...emptyTask,
+          id: title + '_id',
+          title,
+          parentTaskId,
+        }),
+        TE.tap((item) => TE.of(tasksMap.set(item.id, item))),
+      ),
+    updateTask: ({ id, title, isDone, parentTaskId }) =>
+      pipe(
+        TE.Do,
+        TE.flatMap(() => pipe(tasksMap.get(id), TE.fromNullable(new Error('Not found')))),
         TE.map((existing) => ({
           ...existing,
-          title: pipe(taskData.title, O.getOrElse(constant(existing.title))),
-          isDone: pipe(taskData.isDone, O.getOrElse(constant(existing.isDone))),
+          title: pipe(title, O.getOrElse(constant(existing.title))),
+          isDone: pipe(isDone, O.getOrElse(constant(existing.isDone))),
+          parentTaskId: pipe(parentTaskId, O.getOrElse(constant(existing.parentTaskId))),
         })),
         TE.tap((item) => TE.of(tasksMap.set(item.id, item))),
       ),

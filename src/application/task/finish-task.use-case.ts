@@ -1,5 +1,5 @@
 import * as O from 'fp-ts/Option';
-import { CanSaveTask } from '../dependencies';
+import { CanUpdateTask } from '../dependencies';
 
-export const finishTaskUseCase = (deps: CanSaveTask) => (taskId: string) =>
-  deps.saveTask({ id: O.some(taskId), title: O.none, isDone: O.some(true) });
+export const finishTaskUseCase = (deps: CanUpdateTask) => (id: string) =>
+  deps.updateTask({ id, title: O.none, isDone: O.some(true), parentTaskId: O.none });

@@ -1,17 +1,27 @@
 import * as O from 'fp-ts/Option';
 import * as TE from 'fp-ts/TaskEither';
-import { TaskSaveData, TaskItemShort, TaskContentUpdateData } from '#/core/data/task-item';
+import {
+  TaskCreateData,
+  TaskItemShort,
+  TaskContentUpdateData,
+  TaskUpdateData,
+  TaskSearchCriteria,
+} from '#/core/data/task-item';
 
 export type CanFindTasks = {
-  findTasks: () => TE.TaskEither<Error, TaskItemShort[]>;
+  findTasks: (criteria: TaskSearchCriteria) => TE.TaskEither<Error, TaskItemShort[]>;
 };
 
 export type CanGetTaskById = {
   getTaskById: (taskId: string) => TE.TaskEither<Error, TaskItemShort>;
 };
 
-export type CanSaveTask = {
-  saveTask: (taskData: TaskSaveData) => TE.TaskEither<Error, TaskItemShort>;
+export type CanCreateTask = {
+  createTask: (taskData: TaskCreateData) => TE.TaskEither<Error, TaskItemShort>;
+};
+
+export type CanUpdateTask = {
+  updateTask: (taskData: TaskUpdateData) => TE.TaskEither<Error, TaskItemShort>;
 };
 
 export type CanRemoveTask = {
