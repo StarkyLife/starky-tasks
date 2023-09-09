@@ -1,15 +1,17 @@
 import { constant, pipe } from 'fp-ts/function';
 import * as O from 'fp-ts/Option';
 import * as TE from 'fp-ts/TaskEither';
-import { addTaskUseCase } from '#/application/task/add-task.use-case';
-import { deleteTaskUseCase } from '#/application/task/delete-task.use-case';
-import { editTaskContentUseCase } from '#/application/task/edit-task-content.use-case';
-import { editTaskUseCase } from '#/application/task/edit-task.use-case';
-import { finishTaskUseCase } from '#/application/task/finish-task.use-case';
-import { getTaskDetailsUseCase } from '#/application/task/get-task-details.use-case';
-import { getTasksUseCase } from '#/application/task/get-tasks.use-case';
-import { moveTaskUseCase } from '#/application/task/move-task.use-case';
-import { reopenTaskUseCase } from '#/application/task/reopen-task.use-case';
+import {
+  addTaskUseCase,
+  getTasksUseCase,
+  deleteTaskUseCase,
+  editTaskUseCase,
+  getTaskDetailsUseCase,
+  editTaskContentUseCase,
+  finishTaskUseCase,
+  reopenTaskUseCase,
+  moveTaskUseCase,
+} from '#/application/task';
 import { createInMemoryTaskStorage } from '#/devices/in-memory-task-storage';
 import { promiseFromTaskEither } from '#/utils/transformations';
 import { createDefaultTask } from './fixtures/task';
