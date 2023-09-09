@@ -1,17 +1,27 @@
 import * as O from 'fp-ts/Option';
 import * as TE from 'fp-ts/TaskEither';
-import { NoteContentUpdateData, NoteItemShort, NoteSaveData } from '#/core/data/note-item';
+import {
+  NoteContentUpdateData,
+  NoteCreateData,
+  NoteItemShort,
+  NoteSearchCriteria,
+  NoteUpdateData,
+} from '#/application/lib/data/note-item';
 
 export type CanFindNotes = {
-  findNotes: () => TE.TaskEither<Error, NoteItemShort[]>;
-};
-
-export type CanSaveNote = {
-  saveNote: (data: NoteSaveData) => TE.TaskEither<Error, NoteItemShort>;
+  findNotes: (criteria: NoteSearchCriteria) => TE.TaskEither<Error, NoteItemShort[]>;
 };
 
 export type CanGetNoteById = {
   getNoteById: (id: string) => TE.TaskEither<Error, NoteItemShort>;
+};
+
+export type CanCreateNote = {
+  createNote: (data: NoteCreateData) => TE.TaskEither<Error, NoteItemShort>;
+};
+
+export type CanUpdateNote = {
+  updateNote: (data: NoteUpdateData) => TE.TaskEither<Error, NoteItemShort>;
 };
 
 export type CanRemoveNote = {

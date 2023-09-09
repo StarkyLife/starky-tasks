@@ -1,29 +1,26 @@
 import * as A from 'fp-ts/Array';
 import { flow, constVoid, constant, pipe } from 'fp-ts/function';
 import * as O from 'fp-ts/Option';
+import * as S from 'fp-ts/string';
 import * as TE from 'fp-ts/TaskEither';
 import {
+  CanCreateNote,
   CanFindNotes,
   CanGetNoteById,
   CanGetNoteContent,
   CanRemoveNote,
-  CanSaveNote,
+  CanUpdateNote,
   CanUpdateNoteContent,
 } from '#/application/dependencies';
-import { NoteItemShort } from '#/core/data/note-item';
+import { NoteItemShort } from '#/application/lib/data/note-item';
 
 type InMemoryNoteStorage = CanFindNotes &
   CanGetNoteById &
-  CanSaveNote &
+  CanCreateNote &
+  CanUpdateNote &
   CanRemoveNote &
   CanGetNoteContent &
   CanUpdateNoteContent;
-
-const emptyNote: NoteItemShort = {
-  id: '',
-  title: '',
-  isArchived: false,
-};
 
 export const createInMemoryNoteStorage = (seed: O.Option<NoteItemShort[]>): InMemoryNoteStorage => {
   const notesMap = pipe(
@@ -37,41 +34,48 @@ export const createInMemoryNoteStorage = (seed: O.Option<NoteItemShort[]>): InMe
   const contentMap = new Map<string, string>();
 
   return {
-    findNotes: () =>
+    findNotes: (criteria) =>
       pipe(
         TE.Do,
         TE.map(() => Array.from(notesMap.values())),
+        TE.map(A.filter(({ parentId }) => O.getEq(S.Eq).equals(parentId, criteria.parentId))),
       ),
     getNoteById: flow(
       TE.of,
       TE.flatMap((id) => pipe(notesMap.get(id), TE.fromNullable(new Error('Not found')))),
     ),
-    saveNote: (data) =>
+    createNote: ({ type, title, parentId }) =>
       pipe(
-        TE.of(data.id),
-        TE.map(
-          flow(
-            O.map((id) =>
-              pipe(
-                O.fromNullable(notesMap.get(id)),
-                O.getOrElse(constant<NoteItemShort>({ ...emptyNote, id })),
-              ),
-            ),
-            O.getOrElse(constant<NoteItemShort>({ ...emptyNote, id: data.title + '_id' })),
-          ),
-        ),
-        TE.map((existing) => ({
-          ...existing,
-          title: pipe(data.title, O.getOrElse(constant(existing.title))),
-          isArchived: pipe(data.isArchived, O.getOrElse(constant(existing.isArchived))),
-        })),
+        TE.of<Error, NoteItemShort>({
+          id: title + '_id',
+          type,
+          title,
+          parentId,
+          isArchived: false,
+        }),
         TE.tap((item) => TE.of(notesMap.set(item.id, item))),
       ),
-    removeNote: flow(
-      TE.of,
-      TE.map((id) => notesMap.delete(id)),
-      TE.map(constVoid),
-    ),
+    updateNote: ({ id, title, isArchived, parentId }) =>
+      pipe(
+        TE.Do,
+        TE.flatMap(() => pipe(notesMap.get(id), TE.fromNullable(new Error('Not found')))),
+        TE.map(
+          (existing): NoteItemShort => ({
+            ...existing,
+            title: pipe(title, O.getOrElse(constant(existing.title))),
+            isArchived: pipe(isArchived, O.getOrElse(constant(existing.isArchived))),
+            parentId: pipe(parentId, O.getOrElse(constant(existing.parentId))),
+          }),
+        ),
+        TE.tap((item) => TE.of(notesMap.set(item.id, item))),
+      ),
+    removeNote: (id) =>
+      pipe(
+        TE.Do,
+        TE.map(() => notesMap.delete(id)),
+        TE.map(() => contentMap.delete(id)),
+        TE.map(constVoid),
+      ),
     getNoteContent: flow(
       TE.of,
       TE.map((id) => pipe(contentMap.get(id), O.fromNullable)),
