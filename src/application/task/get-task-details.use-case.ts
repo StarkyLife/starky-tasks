@@ -11,6 +11,6 @@ export const getTaskDetailsUseCase =
       TE.Do,
       TE.bind('item', () => deps.getTaskById(taskId)),
       TE.bind('content', () => deps.getTaskContent(taskId)),
-      TE.bind('tasks', () => deps.findTasks({ parentTaskId: O.some(taskId) })),
+      TE.bind('tasks', () => deps.findTasks({ parentId: O.some(taskId) })),
       TE.map(({ item, content, tasks }): TaskItemDetails => ({ ...item, content, tasks })),
     );

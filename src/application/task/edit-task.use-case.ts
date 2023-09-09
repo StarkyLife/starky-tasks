@@ -5,4 +5,4 @@ import { CanUpdateTask } from '../dependencies';
 export const editTaskUseCase =
   (deps: CanUpdateTask) =>
   ({ id, title }: TaskTitleUpdateData) =>
-    deps.updateTask({ id, title: O.some(title), isDone: O.none, parentTaskId: O.none });
+    deps.updateTask({ id, title: O.some(title), isDone: O.none, parentId: O.none });

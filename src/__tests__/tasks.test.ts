@@ -18,9 +18,9 @@ test('can add new task', async () => {
 
   await expect(
     pipe(
-      { title: 'new task title', parentTaskId: O.none },
+      { title: 'new task title', parentId: O.none },
       addTaskUseCase(storage),
-      TE.map(constant({ parentTaskId: O.none })),
+      TE.map(constant({ parentId: O.none })),
       TE.flatMap(getTasksUseCase(storage)),
       promiseFromTaskEither,
     ),
@@ -29,7 +29,7 @@ test('can add new task', async () => {
       id: expect.any(String),
       title: 'new task title',
       isDone: false,
-      parentTaskId: O.none,
+      parentId: O.none,
     },
   ]);
 });
@@ -42,7 +42,7 @@ test('can delete task', async () => {
     pipe(
       defaultTask.id,
       deleteTaskUseCase(storage),
-      TE.map(constant({ parentTaskId: O.none })),
+      TE.map(constant({ parentId: O.none })),
       TE.flatMap(getTasksUseCase(storage)),
       promiseFromTaskEither,
     ),
@@ -57,7 +57,7 @@ test('can edit task', async () => {
     pipe(
       { id: defaultTask.id, title: 'editted title' },
       editTaskUseCase(storage),
-      TE.map(constant({ parentTaskId: O.none })),
+      TE.map(constant({ parentId: O.none })),
       TE.flatMap(getTasksUseCase(storage)),
       promiseFromTaskEither,
     ),
@@ -109,7 +109,7 @@ test('can finish task', async () => {
     pipe(
       defaultTask.id,
       finishTaskUseCase(storage),
-      TE.map(constant({ parentTaskId: O.none })),
+      TE.map(constant({ parentId: O.none })),
       TE.flatMap(getTasksUseCase(storage)),
       promiseFromTaskEither,
     ),
@@ -129,7 +129,7 @@ test('can reopen task', async () => {
     pipe(
       defaultTask.id,
       reopenTaskUseCase(storage),
-      TE.map(constant({ parentTaskId: O.none })),
+      TE.map(constant({ parentId: O.none })),
       TE.flatMap(getTasksUseCase(storage)),
       promiseFromTaskEither,
     ),
@@ -146,7 +146,7 @@ test('can add new task to existing task', async () => {
   const storage = createInMemoryTaskStorage(O.some([defaultTask]));
 
   await pipe(
-    { title: 'new task title', parentTaskId: O.some(defaultTask.id) },
+    { title: 'new task title', parentId: O.some(defaultTask.id) },
     addTaskUseCase(storage),
     promiseFromTaskEither,
   );
@@ -161,12 +161,12 @@ test('can add new task to existing task', async () => {
         id: expect.any(String),
         title: 'new task title',
         isDone: false,
-        parentTaskId: O.some(defaultTask.id),
+        parentId: O.some(defaultTask.id),
       },
     ],
   });
 
   await expect(
-    pipe({ parentTaskId: O.none }, getTasksUseCase(storage), promiseFromTaskEither),
+    pipe({ parentId: O.none }, getTasksUseCase(storage), promiseFromTaskEither),
   ).resolves.toEqual([defaultTask]);
 });

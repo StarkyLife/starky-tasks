@@ -5,6 +5,6 @@ export const createDefaultTask = (override?: Partial<TaskItemShort>): TaskItemSh
   id: 'randomId',
   title: 'task title',
   isDone: false,
-  parentTaskId: O.none,
+  parentId: O.none,
   ...override,
 });

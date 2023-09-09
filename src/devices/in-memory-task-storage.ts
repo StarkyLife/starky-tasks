@@ -26,7 +26,7 @@ const emptyTask: TaskItemShort = {
   id: '',
   title: '',
   isDone: false,
-  parentTaskId: O.none,
+  parentId: O.none,
 };
 
 export const createInMemoryTaskStorage = (seed: O.Option<TaskItemShort[]>): InMemoryTaskStorage => {
@@ -45,34 +45,34 @@ export const createInMemoryTaskStorage = (seed: O.Option<TaskItemShort[]>): InMe
       pipe(
         TE.Do,
         TE.map(() => Array.from(tasksMap.values())),
-        TE.map(
-          A.filter(({ parentTaskId }) => O.getEq(S.Eq).equals(parentTaskId, criteria.parentTaskId)),
-        ),
+        TE.map(A.filter(({ parentId }) => O.getEq(S.Eq).equals(parentId, criteria.parentId))),
       ),
     getTaskById: flow(
       TE.of,
       TE.flatMap((id) => pipe(tasksMap.get(id), TE.fromNullable(new Error('Not found')))),
     ),
-    createTask: ({ title, parentTaskId }) =>
+    createTask: ({ title, parentId }) =>
       pipe(
         TE.of<Error, TaskItemShort>({
           ...emptyTask,
           id: title + '_id',
           title,
-          parentTaskId,
+          parentId,
         }),
         TE.tap((item) => TE.of(tasksMap.set(item.id, item))),
       ),
-    updateTask: ({ id, title, isDone, parentTaskId }) =>
+    updateTask: ({ id, title, isDone, parentId }) =>
       pipe(
         TE.Do,
         TE.flatMap(() => pipe(tasksMap.get(id), TE.fromNullable(new Error('Not found')))),
-        TE.map((existing) => ({
-          ...existing,
-          title: pipe(title, O.getOrElse(constant(existing.title))),
-          isDone: pipe(isDone, O.getOrElse(constant(existing.isDone))),
-          parentTaskId: pipe(parentTaskId, O.getOrElse(constant(existing.parentTaskId))),
-        })),
+        TE.map(
+          (existing): TaskItemShort => ({
+            ...existing,
+            title: pipe(title, O.getOrElse(constant(existing.title))),
+            isDone: pipe(isDone, O.getOrElse(constant(existing.isDone))),
+            parentId: pipe(parentId, O.getOrElse(constant(existing.parentId))),
+          }),
+        ),
         TE.tap((item) => TE.of(tasksMap.set(item.id, item))),
       ),
     removeTask: (taskId) =>
