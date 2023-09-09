@@ -1,6 +1,7 @@
 import * as O from 'fp-ts/Option';
 import * as TE from 'fp-ts/TaskEither';
 import {
+  NoteChildrenOrderChangeData,
   NoteContentUpdateData,
   NoteCreateData,
   NoteItemShort,
@@ -34,4 +35,12 @@ export type CanGetNoteContent = {
 
 export type CanUpdateNoteContent = {
   updateNoteContent: (data: NoteContentUpdateData) => TE.TaskEither<Error, void>;
+};
+
+export type CanUpdateNotesChildrenOrder = {
+  updateNotesChildrenOrder: (data: NoteChildrenOrderChangeData) => TE.TaskEither<Error, void>;
+};
+
+export type CanGetNotesChildrenOrder = {
+  getNotesChildrenOrder: (id: O.Option<string>) => TE.TaskEither<Error, O.Option<string[]>>;
 };

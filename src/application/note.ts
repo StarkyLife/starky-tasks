@@ -6,6 +6,7 @@ import {
   NoteItemDetails,
   noteUpdateDataDefaults,
   NoteRelationUpdateData,
+  NoteSearchCriteria,
 } from '#/application/lib/data/note-item';
 import {
   CanUpdateNote,
@@ -15,7 +16,10 @@ import {
   CanGetNoteContent,
   CanFindNotes,
   CanCreateNote,
+  CanUpdateNotesChildrenOrder,
+  CanGetNotesChildrenOrder,
 } from './dependencies';
+import { repositionNotesByOrder } from './lib/ordering';
 
 /* Create */
 
@@ -23,7 +27,13 @@ export const addNoteUseCase = (deps: CanCreateNote) => deps.createNote;
 
 /* Read */
 
-export const getNotesUseCase = (deps: CanFindNotes) => deps.findNotes;
+export const getNotesUseCase =
+  (deps: CanFindNotes & CanGetNotesChildrenOrder) => (criteria: NoteSearchCriteria) =>
+    pipe(
+      TE.of(repositionNotesByOrder),
+      TE.ap(deps.findNotes(criteria)),
+      TE.ap(deps.getNotesChildrenOrder(criteria.parentId)),
+    );
 
 export const getNoteDetailsUseCase =
   (deps: CanGetNoteById & CanGetNoteContent & CanFindNotes) => (taskId: string) =>
@@ -54,6 +64,9 @@ export const archiveNoteUseCase = (deps: CanUpdateNote) => (id: string) =>
 
 export const restoreNoteUseCase = (deps: CanUpdateNote) => (id: string) =>
   deps.updateNote({ ...noteUpdateDataDefaults, id, isArchived: O.some(false) });
+
+export const changeNotesOrderUseCase = (deps: CanUpdateNotesChildrenOrder) =>
+  deps.updateNotesChildrenOrder;
 
 /* Delete */
 

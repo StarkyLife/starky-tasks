@@ -8,9 +8,11 @@ import {
   CanFindNotes,
   CanGetNoteById,
   CanGetNoteContent,
+  CanGetNotesChildrenOrder,
   CanRemoveNote,
   CanUpdateNote,
   CanUpdateNoteContent,
+  CanUpdateNotesChildrenOrder,
 } from '#/application/dependencies';
 import { NoteItemShort } from '#/application/lib/data/note-item';
 
@@ -20,7 +22,9 @@ type InMemoryNoteStorage = CanFindNotes &
   CanUpdateNote &
   CanRemoveNote &
   CanGetNoteContent &
-  CanUpdateNoteContent;
+  CanUpdateNoteContent &
+  CanUpdateNotesChildrenOrder &
+  CanGetNotesChildrenOrder;
 
 export const createInMemoryNoteStorage = (seed: O.Option<NoteItemShort[]>): InMemoryNoteStorage => {
   const notesMap = pipe(
@@ -32,6 +36,9 @@ export const createInMemoryNoteStorage = (seed: O.Option<NoteItemShort[]>): InMe
     ),
   );
   const contentMap = new Map<string, string>();
+
+  const parentlessNotesOrderId = Symbol();
+  const ordersMap = new Map<string | symbol, string[]>();
 
   return {
     findNotes: (criteria) =>
@@ -74,6 +81,7 @@ export const createInMemoryNoteStorage = (seed: O.Option<NoteItemShort[]>): InMe
         TE.Do,
         TE.map(() => notesMap.delete(id)),
         TE.map(() => contentMap.delete(id)),
+        TE.map(() => ordersMap.delete(id)),
         TE.map(constVoid),
       ),
     getNoteContent: flow(
@@ -85,6 +93,21 @@ export const createInMemoryNoteStorage = (seed: O.Option<NoteItemShort[]>): InMe
         TE.Do,
         TE.map(() => contentMap.set(id, content)),
         TE.map(constVoid),
+      ),
+    updateNotesChildrenOrder: (data) =>
+      pipe(
+        data.id,
+        O.getOrElseW(constant(parentlessNotesOrderId)),
+        TE.of,
+        TE.map((id) => ordersMap.set(id, data.childrenIdsInOrder)),
+        TE.map(constVoid),
+      ),
+    getNotesChildrenOrder: (id) =>
+      pipe(
+        id,
+        O.getOrElseW(constant(parentlessNotesOrderId)),
+        TE.of,
+        TE.map((orderId) => pipe(ordersMap.get(orderId), O.fromNullable)),
       ),
   };
 };

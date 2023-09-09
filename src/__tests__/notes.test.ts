@@ -4,6 +4,7 @@ import * as TE from 'fp-ts/TaskEither';
 import {
   addNoteUseCase,
   archiveNoteUseCase,
+  changeNotesOrderUseCase,
   deleteNoteUseCase,
   editNoteContentUseCase,
   editNoteUseCase,
@@ -208,4 +209,20 @@ test('can move note to another note', async () => {
       ],
     },
   });
+});
+
+test('can save notes order', async () => {
+  const firstNote = createDefaultNote({ id: 'first' });
+  const secondNote = createDefaultNote({ id: 'second' });
+  const storage = createInMemoryNoteStorage(O.some([firstNote, secondNote]));
+
+  await expect(
+    pipe(
+      { id: O.none, childrenIdsInOrder: [secondNote.id, firstNote.id] },
+      changeNotesOrderUseCase(storage),
+      TE.map(constant({ parentId: O.none })),
+      TE.flatMap(getNotesUseCase(storage)),
+      promiseFromTaskEither,
+    ),
+  ).resolves.toEqual([secondNote, firstNote]);
 });

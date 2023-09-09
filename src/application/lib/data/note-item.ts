@@ -42,6 +42,10 @@ export type NoteContentUpdateData = NoteItemId & {
   content: string;
 };
 export type NoteSearchCriteria = NoteItemRelations;
+export type NoteChildrenOrderChangeData = {
+  id: O.Option<string>;
+  childrenIdsInOrder: string[];
+};
 
 export const noteUpdateDataDefaults: Omit<NoteUpdateData, 'id'> = {
   title: O.none,
