@@ -8,6 +8,7 @@ import { editTaskUseCase } from '#/application/task/edit-task.use-case';
 import { finishTaskUseCase } from '#/application/task/finish-task.use-case';
 import { getTaskDetailsUseCase } from '#/application/task/get-task-details.use-case';
 import { getTasksUseCase } from '#/application/task/get-tasks.use-case';
+import { moveTaskUseCase } from '#/application/task/move-task.use-case';
 import { reopenTaskUseCase } from '#/application/task/reopen-task.use-case';
 import { createInMemoryTaskStorage } from '#/devices/in-memory-task-storage';
 import { promiseFromTaskEither } from '#/utils/transformations';
@@ -169,4 +170,38 @@ test('can add new task to existing task', async () => {
   await expect(
     pipe({ parentId: O.none }, getTasksUseCase(storage), promiseFromTaskEither),
   ).resolves.toEqual([defaultTask]);
+});
+
+test('can move task to another task', async () => {
+  const parentTask = createDefaultTask({ id: 'parent', parentId: O.none });
+  const childTask = createDefaultTask({ id: 'child', parentId: O.some(parentTask.id) });
+  const anotherTask = createDefaultTask({ id: 'another', parentId: O.none });
+  const storage = createInMemoryTaskStorage(O.some([parentTask, childTask, anotherTask]));
+
+  await expect(
+    pipe(
+      { id: childTask.id, parentId: O.some(anotherTask.id) },
+      moveTaskUseCase(storage),
+      TE.map(constant({})),
+      TE.bind('parentTaskDetails', () => pipe(parentTask.id, getTaskDetailsUseCase(storage))),
+      TE.bind('anotherTaskDetails', () => pipe(anotherTask.id, getTaskDetailsUseCase(storage))),
+      promiseFromTaskEither,
+    ),
+  ).resolves.toEqual({
+    parentTaskDetails: {
+      ...parentTask,
+      content: O.none,
+      tasks: [],
+    },
+    anotherTaskDetails: {
+      ...anotherTask,
+      content: O.none,
+      tasks: [
+        {
+          ...childTask,
+          parentId: O.some(anotherTask.id),
+        },
+      ],
+    },
+  });
 });

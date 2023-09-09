@@ -33,6 +33,11 @@ export type TaskTitleUpdateData = {
   title: string;
 };
 
+export type TaskRelationUpdateData = {
+  id: string;
+  parentId: O.Option<string>;
+};
+
 export type TaskContentUpdateData = {
   id: string;
   content: string;
