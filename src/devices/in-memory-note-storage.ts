@@ -14,7 +14,7 @@ import {
   CanUpdateNoteContent,
   CanUpdateNotesChildrenOrder,
 } from '#/application/dependencies';
-import { NoteItemShort } from '#/application/lib/data/note-item';
+import { NoteItemId, NoteItemShort } from '#/application/lib/data/note-item';
 
 type InMemoryNoteStorage = CanFindNotes &
   CanGetNoteById &
@@ -29,16 +29,16 @@ type InMemoryNoteStorage = CanFindNotes &
 export const createInMemoryNoteStorage = (seed: O.Option<NoteItemShort[]>): InMemoryNoteStorage => {
   const notesMap = pipe(
     seed,
-    O.map(A.map((s): [string, NoteItemShort] => [s.id, s])),
+    O.map(A.map((s): [NoteItemId, NoteItemShort] => [s.id, s])),
     O.match(
-      () => new Map<string, NoteItemShort>(),
-      (s) => new Map<string, NoteItemShort>(s),
+      () => new Map<NoteItemId, NoteItemShort>(),
+      (s) => new Map<NoteItemId, NoteItemShort>(s),
     ),
   );
-  const contentMap = new Map<string, string>();
+  const contentMap = new Map<NoteItemId, string>();
 
   const parentlessNotesOrderId = Symbol();
-  const ordersMap = new Map<string | symbol, string[]>();
+  const ordersMap = new Map<NoteItemId | symbol, NoteItemId[]>();
 
   return {
     findNotes: (criteria) =>
@@ -53,13 +53,15 @@ export const createInMemoryNoteStorage = (seed: O.Option<NoteItemShort[]>): InMe
     ),
     createNote: ({ type, title, parentId }) =>
       pipe(
-        TE.of<Error, NoteItemShort>({
-          id: title + '_id',
+        TE.fromEither(NoteItemId.decode(Date.now().toString() + '_' + title)),
+        TE.mapLeft(constant(new Error('Note Id creation error'))),
+        TE.map((id) => ({
+          id,
           type,
           title,
           parentId,
           isArchived: false,
-        }),
+        })),
         TE.tap((item) => TE.of(notesMap.set(item.id, item))),
       ),
     updateNote: ({ id, title, isArchived, parentId }) =>

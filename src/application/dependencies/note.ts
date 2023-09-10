@@ -4,6 +4,7 @@ import {
   NoteChildrenOrderChangeData,
   NoteContentUpdateData,
   NoteCreateData,
+  NoteItemId,
   NoteItemShort,
   NoteSearchCriteria,
   NoteUpdateData,
@@ -14,7 +15,7 @@ export type CanFindNotes = {
 };
 
 export type CanGetNoteById = {
-  getNoteById: (id: string) => TE.TaskEither<Error, NoteItemShort>;
+  getNoteById: (id: NoteItemId) => TE.TaskEither<Error, NoteItemShort>;
 };
 
 export type CanCreateNote = {
@@ -26,11 +27,11 @@ export type CanUpdateNote = {
 };
 
 export type CanRemoveNote = {
-  removeNote: (id: string) => TE.TaskEither<Error, void>;
+  removeNote: (id: NoteItemId) => TE.TaskEither<Error, void>;
 };
 
 export type CanGetNoteContent = {
-  getNoteContent: (taskId: string) => TE.TaskEither<Error, O.Option<string>>;
+  getNoteContent: (id: NoteItemId) => TE.TaskEither<Error, O.Option<string>>;
 };
 
 export type CanUpdateNoteContent = {
@@ -42,5 +43,5 @@ export type CanUpdateNotesChildrenOrder = {
 };
 
 export type CanGetNotesChildrenOrder = {
-  getNotesChildrenOrder: (id: O.Option<string>) => TE.TaskEither<Error, O.Option<string[]>>;
+  getNotesChildrenOrder: (id: O.Option<NoteItemId>) => TE.TaskEither<Error, O.Option<NoteItemId[]>>;
 };

@@ -11,8 +11,8 @@ import {
   CanCreateUser,
   CanFindVaults,
 } from '#/application/dependencies';
-import { User } from '#/application/lib/data/user';
-import { Vault } from '#/application/lib/data/vault';
+import { User, UserId } from '#/application/lib/data/user';
+import { Vault, VaultId } from '#/application/lib/data/vault';
 
 type InMemoryVaultStorage = CanCreateVault & CanUpdateVault & CanCreateUser & CanFindVaults;
 
@@ -22,34 +22,36 @@ export const createInMemoryVaultStorage = (
   const vaultsMap = pipe(
     seed,
     O.map((s) => s.vaults),
-    O.map(A.map((v): [string, Vault] => [v.id, v])),
+    O.map(A.map((v): [VaultId, Vault] => [v.id, v])),
     O.match(
-      () => new Map<string, Vault>(),
-      (v) => new Map<string, Vault>(v),
+      () => new Map<VaultId, Vault>(),
+      (v) => new Map<VaultId, Vault>(v),
     ),
   );
   const usersMap = pipe(
     seed,
     O.map((s) => [s.user]),
-    O.map(A.map((u): [string, User] => [u.id, u])),
+    O.map(A.map((u): [UserId, User] => [u.id, u])),
     O.match(
-      () => new Map<string, User>(),
-      (u) => new Map<string, User>(u),
+      () => new Map<UserId, User>(),
+      (u) => new Map<UserId, User>(u),
     ),
   );
   const usersVaultsMap = pipe(
     seed,
-    O.map((s): Array<[string, string[]]> => [[s.user.id, s.vaults.map((v) => v.id)]]),
+    O.map((s): Array<[UserId, VaultId[]]> => [[s.user.id, s.vaults.map((v) => v.id)]]),
     O.match(
-      () => new Map<string, string[]>(),
-      (u) => new Map<string, string[]>(u),
+      () => new Map<UserId, VaultId[]>(),
+      (u) => new Map<UserId, VaultId[]>(u),
     ),
   );
 
   return {
     createUser: (login) =>
       pipe(
-        TE.of({ id: Date.now().toString(), login }),
+        TE.fromEither(UserId.decode(Date.now().toString() + '_' + login)),
+        TE.mapLeft(constant(new Error('User Id creation error'))),
+        TE.map((id) => ({ id, login })),
         TE.tap((u) => TE.of(usersMap.set(u.id, u))),
       ),
     findVaults: ({ userId }) =>
@@ -73,7 +75,9 @@ export const createInMemoryVaultStorage = (
       ),
     createVault: ({ name, creatorId }) =>
       pipe(
-        TE.of({ id: Date.now().toString(), name }),
+        TE.fromEither(VaultId.decode(Date.now().toString() + '_' + name)),
+        TE.mapLeft(constant(new Error('Vault Id creation error'))),
+        TE.map((id) => ({ id, name })),
         TE.tap((v) => TE.of(vaultsMap.set(v.id, v))),
         TE.tapEither((vault) =>
           pipe(

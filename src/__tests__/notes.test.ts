@@ -40,8 +40,14 @@ test('can add new note', async () => {
 });
 
 test('can delete note', async () => {
-  const defaultNote = createDefaultNote();
-  const storage = createInMemoryNoteStorage(O.some([defaultNote]));
+  const { defaultNote, storage } = await pipe(
+    TE.Do,
+    TE.bind('defaultNote', () => TE.fromEither(createDefaultNote())),
+    TE.bind('storage', ({ defaultNote }) =>
+      TE.of(createInMemoryNoteStorage(O.some([defaultNote]))),
+    ),
+    promiseFromTaskEither,
+  );
 
   await expect(
     pipe(
@@ -55,8 +61,14 @@ test('can delete note', async () => {
 });
 
 test('can edit note', async () => {
-  const defaultNote = createDefaultNote({ title: 'initial title' });
-  const storage = createInMemoryNoteStorage(O.some([defaultNote]));
+  const { defaultNote, storage } = await pipe(
+    TE.Do,
+    TE.bind('defaultNote', () => TE.fromEither(createDefaultNote({ title: 'initial title' }))),
+    TE.bind('storage', ({ defaultNote }) =>
+      TE.of(createInMemoryNoteStorage(O.some([defaultNote]))),
+    ),
+    promiseFromTaskEither,
+  );
 
   await expect(
     pipe(
@@ -75,8 +87,14 @@ test('can edit note', async () => {
 });
 
 test('can get note details', async () => {
-  const defaultNote = createDefaultNote();
-  const storage = createInMemoryNoteStorage(O.some([defaultNote]));
+  const { defaultNote, storage } = await pipe(
+    TE.Do,
+    TE.bind('defaultNote', () => TE.fromEither(createDefaultNote())),
+    TE.bind('storage', ({ defaultNote }) =>
+      TE.of(createInMemoryNoteStorage(O.some([defaultNote]))),
+    ),
+    promiseFromTaskEither,
+  );
 
   await expect(
     pipe(defaultNote.id, getNoteDetailsUseCase(storage), promiseFromTaskEither),
@@ -88,8 +106,14 @@ test('can get note details', async () => {
 });
 
 test('can edit note content', async () => {
-  const defaultNote = createDefaultNote();
-  const storage = createInMemoryNoteStorage(O.some([defaultNote]));
+  const { defaultNote, storage } = await pipe(
+    TE.Do,
+    TE.bind('defaultNote', () => TE.fromEither(createDefaultNote())),
+    TE.bind('storage', ({ defaultNote }) =>
+      TE.of(createInMemoryNoteStorage(O.some([defaultNote]))),
+    ),
+    promiseFromTaskEither,
+  );
 
   await expect(
     pipe(
@@ -107,8 +131,14 @@ test('can edit note content', async () => {
 });
 
 test('can finish note', async () => {
-  const defaultNote = createDefaultNote({ isArchived: false });
-  const storage = createInMemoryNoteStorage(O.some([defaultNote]));
+  const { defaultNote, storage } = await pipe(
+    TE.Do,
+    TE.bind('defaultNote', () => TE.fromEither(createDefaultNote({ isArchived: false }))),
+    TE.bind('storage', ({ defaultNote }) =>
+      TE.of(createInMemoryNoteStorage(O.some([defaultNote]))),
+    ),
+    promiseFromTaskEither,
+  );
 
   await expect(
     pipe(
@@ -127,8 +157,14 @@ test('can finish note', async () => {
 });
 
 test('can reopen note', async () => {
-  const defaultNote = createDefaultNote({ isArchived: true });
-  const storage = createInMemoryNoteStorage(O.some([defaultNote]));
+  const { defaultNote, storage } = await pipe(
+    TE.Do,
+    TE.bind('defaultNote', () => TE.fromEither(createDefaultNote({ isArchived: true }))),
+    TE.bind('storage', ({ defaultNote }) =>
+      TE.of(createInMemoryNoteStorage(O.some([defaultNote]))),
+    ),
+    promiseFromTaskEither,
+  );
 
   await expect(
     pipe(
@@ -147,8 +183,14 @@ test('can reopen note', async () => {
 });
 
 test('can add new note to existing note', async () => {
-  const defaultNote = createDefaultNote();
-  const storage = createInMemoryNoteStorage(O.some([defaultNote]));
+  const { defaultNote, storage } = await pipe(
+    TE.Do,
+    TE.bind('defaultNote', () => TE.fromEither(createDefaultNote())),
+    TE.bind('storage', ({ defaultNote }) =>
+      TE.of(createInMemoryNoteStorage(O.some([defaultNote]))),
+    ),
+    promiseFromTaskEither,
+  );
 
   await pipe(
     { type: 'note', title: 'new note title', parentId: O.some(defaultNote.id) },
@@ -178,10 +220,22 @@ test('can add new note to existing note', async () => {
 });
 
 test('can move note to another note', async () => {
-  const parentNote = createDefaultNote({ id: 'parent', parentId: O.none });
-  const childNote = createDefaultNote({ id: 'child', parentId: O.some(parentNote.id) });
-  const anotherNote = createDefaultNote({ id: 'another', parentId: O.none });
-  const storage = createInMemoryNoteStorage(O.some([parentNote, childNote, anotherNote]));
+  const { parentNote, childNote, anotherNote, storage } = await pipe(
+    TE.Do,
+    TE.bind('parentNote', () =>
+      TE.fromEither(createDefaultNote({ id: 'parent', parentId: O.none })),
+    ),
+    TE.bind('childNote', ({ parentNote }) =>
+      TE.fromEither(createDefaultNote({ id: 'child', parentId: O.some(parentNote.id) })),
+    ),
+    TE.bind('anotherNote', () =>
+      TE.fromEither(createDefaultNote({ id: 'another', parentId: O.none })),
+    ),
+    TE.bind('storage', ({ parentNote, childNote, anotherNote }) =>
+      TE.of(createInMemoryNoteStorage(O.some([parentNote, childNote, anotherNote]))),
+    ),
+    promiseFromTaskEither,
+  );
 
   await expect(
     pipe(
@@ -212,9 +266,15 @@ test('can move note to another note', async () => {
 });
 
 test('can save notes order', async () => {
-  const firstNote = createDefaultNote({ id: 'first' });
-  const secondNote = createDefaultNote({ id: 'second' });
-  const storage = createInMemoryNoteStorage(O.some([firstNote, secondNote]));
+  const { firstNote, secondNote, storage } = await pipe(
+    TE.Do,
+    TE.bind('firstNote', () => TE.fromEither(createDefaultNote({ id: 'first' }))),
+    TE.bind('secondNote', () => TE.fromEither(createDefaultNote({ id: 'second' }))),
+    TE.bind('storage', ({ firstNote, secondNote }) =>
+      TE.of(createInMemoryNoteStorage(O.some([firstNote, secondNote]))),
+    ),
+    promiseFromTaskEither,
+  );
 
   await expect(
     pipe(

@@ -1,7 +1,12 @@
 import * as O from 'fp-ts/Option';
+import * as t from 'io-ts';
+import { createStringBrand } from '#/utils/brands';
 
-type NoteItemId = {
-  id: string;
+export const NoteItemId = createStringBrand('NoteItemId');
+export type NoteItemId = t.TypeOf<typeof NoteItemId>;
+
+type NoteItemIdStruct = {
+  id: NoteItemId;
 };
 type NoteItemType = {
   type: 'task' | 'note';
@@ -13,7 +18,7 @@ type NoteItemState = {
   isArchived: boolean;
 };
 type NoteItemRelations = {
-  parentId: O.Option<string>;
+  parentId: O.Option<NoteItemId>;
 };
 type NoteItemContent = {
   content: O.Option<string>;
@@ -22,7 +27,7 @@ type NoteItemChildren = {
   children: NoteItemShort[];
 };
 
-export type NoteItemShort = NoteItemId &
+export type NoteItemShort = NoteItemIdStruct &
   NoteItemType &
   NoteItemTitle &
   NoteItemState &
@@ -30,21 +35,21 @@ export type NoteItemShort = NoteItemId &
 export type NoteItemDetails = NoteItemShort & NoteItemContent & NoteItemChildren;
 
 export type NoteCreateData = NoteItemType & NoteItemTitle & NoteItemRelations;
-export type NoteUpdateData = NoteItemId & {
+export type NoteUpdateData = NoteItemIdStruct & {
   title: O.Option<string>;
   isArchived: O.Option<boolean>;
-  parentId: O.Option<O.Option<string>>;
+  parentId: O.Option<O.Option<NoteItemId>>;
 };
 
-export type NoteTitleUpdateData = NoteItemId & NoteItemTitle;
-export type NoteRelationUpdateData = NoteItemId & NoteItemRelations;
-export type NoteContentUpdateData = NoteItemId & {
+export type NoteTitleUpdateData = NoteItemIdStruct & NoteItemTitle;
+export type NoteRelationUpdateData = NoteItemIdStruct & NoteItemRelations;
+export type NoteContentUpdateData = NoteItemIdStruct & {
   content: string;
 };
 export type NoteSearchCriteria = NoteItemRelations;
 export type NoteChildrenOrderChangeData = {
-  id: O.Option<string>;
-  childrenIdsInOrder: string[];
+  id: O.Option<NoteItemId>;
+  childrenIdsInOrder: NoteItemId[];
 };
 
 export const noteUpdateDataDefaults: Omit<NoteUpdateData, 'id'> = {

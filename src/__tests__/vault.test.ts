@@ -5,24 +5,27 @@ import { registerUserUseCase } from '#/application/user';
 import { addVaultUseCase, getUserVaultsUseCase, renameVaultUseCase } from '#/application/vault';
 import { createInMemoryVaultStorage } from '#/devices/in-memory-vault-storage';
 import { promiseFromTaskEither } from '#/utils/transformations';
+import { createDefaultUser } from './fixtures/user';
+import { createDefaultVault } from './fixtures/vault';
 
 it('should create vault', async () => {
   const storage = createInMemoryVaultStorage(O.none);
-  const vaults = await pipe(
-    'user-login',
-    registerUserUseCase(storage),
-    TE.flatMap((user) =>
-      pipe(
-        { name: 'vault name', creatorId: user.id },
-        addVaultUseCase(storage),
-        TE.map(constant({ userId: user.id })),
-        TE.flatMap(getUserVaultsUseCase(storage)),
-      ),
-    ),
-    promiseFromTaskEither,
-  );
 
-  expect(vaults).toEqual([
+  await expect(
+    pipe(
+      'user-login',
+      registerUserUseCase(storage),
+      TE.flatMap((user) =>
+        pipe(
+          { name: 'vault name', creatorId: user.id },
+          addVaultUseCase(storage),
+          TE.map(constant({ userId: user.id })),
+          TE.flatMap(getUserVaultsUseCase(storage)),
+        ),
+      ),
+      promiseFromTaskEither,
+    ),
+  ).resolves.toEqual([
     {
       id: expect.any(String),
       name: 'vault name',
@@ -31,24 +34,32 @@ it('should create vault', async () => {
 });
 
 it('should rename vault', async () => {
-  const defaultUser = { id: 'userId', login: 'userLogin' };
-  const defaultVault = { id: 'vaultId', name: 'vault name' };
-
-  const storage = createInMemoryVaultStorage(
-    O.some({
-      user: defaultUser,
-      vaults: [defaultVault],
-    }),
-  );
-  const vaults = await pipe(
-    { id: defaultVault.id, name: 'new vault name' },
-    renameVaultUseCase(storage),
-    TE.map(constant({ userId: defaultUser.id })),
-    TE.flatMap(getUserVaultsUseCase(storage)),
-    promiseFromTaskEither,
-  );
-
-  expect(vaults).toEqual([
+  await expect(
+    pipe(
+      TE.Do,
+      TE.bind('defaultUser', () => TE.fromEither(createDefaultUser())),
+      TE.bind('defaultVault', () => TE.fromEither(createDefaultVault({ name: 'old vault name' }))),
+      TE.bind('storage', ({ defaultUser, defaultVault }) =>
+        TE.of(
+          createInMemoryVaultStorage(
+            O.some({
+              user: defaultUser,
+              vaults: [defaultVault],
+            }),
+          ),
+        ),
+      ),
+      TE.flatMap(({ storage, defaultUser, defaultVault }) =>
+        pipe(
+          { id: defaultVault.id, name: 'new vault name' },
+          renameVaultUseCase(storage),
+          TE.map(constant({ userId: defaultUser.id })),
+          TE.flatMap(getUserVaultsUseCase(storage)),
+        ),
+      ),
+      promiseFromTaskEither,
+    ),
+  ).resolves.toEqual([
     {
       id: expect.any(String),
       name: 'new vault name',

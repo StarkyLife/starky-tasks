@@ -7,6 +7,7 @@ import {
   noteUpdateDataDefaults,
   NoteRelationUpdateData,
   NoteSearchCriteria,
+  NoteItemId,
 } from '#/application/lib/data/note-item';
 import {
   CanUpdateNote,
@@ -36,12 +37,12 @@ export const getNotesUseCase =
     );
 
 export const getNoteDetailsUseCase =
-  (deps: CanGetNoteById & CanGetNoteContent & CanFindNotes) => (taskId: string) =>
+  (deps: CanGetNoteById & CanGetNoteContent & CanFindNotes) => (id: NoteItemId) =>
     pipe(
       TE.Do,
-      TE.bind('item', () => deps.getNoteById(taskId)),
-      TE.bind('content', () => deps.getNoteContent(taskId)),
-      TE.bind('children', () => deps.findNotes({ parentId: O.some(taskId) })),
+      TE.bind('item', () => deps.getNoteById(id)),
+      TE.bind('content', () => deps.getNoteContent(id)),
+      TE.bind('children', () => deps.findNotes({ parentId: O.some(id) })),
       TE.map(({ item, content, children }): NoteItemDetails => ({ ...item, content, children })),
     );
 
@@ -59,10 +60,10 @@ export const moveNoteUseCase =
   ({ id, parentId }: NoteRelationUpdateData) =>
     deps.updateNote({ ...noteUpdateDataDefaults, id, parentId: O.some(parentId) });
 
-export const archiveNoteUseCase = (deps: CanUpdateNote) => (id: string) =>
+export const archiveNoteUseCase = (deps: CanUpdateNote) => (id: NoteItemId) =>
   deps.updateNote({ ...noteUpdateDataDefaults, id, isArchived: O.some(true) });
 
-export const restoreNoteUseCase = (deps: CanUpdateNote) => (id: string) =>
+export const restoreNoteUseCase = (deps: CanUpdateNote) => (id: NoteItemId) =>
   deps.updateNote({ ...noteUpdateDataDefaults, id, isArchived: O.some(false) });
 
 export const changeNotesOrderUseCase = (deps: CanUpdateNotesChildrenOrder) =>
