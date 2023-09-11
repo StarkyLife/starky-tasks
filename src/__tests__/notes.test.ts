@@ -13,12 +13,12 @@ import {
   moveNoteUseCase,
   restoreNoteUseCase,
 } from '#/application/note';
-import { createInMemoryNoteStorage } from '#/devices/in-memory-note-storage';
+import { createInMemoryRepository } from '#/devices/in-memory-repository';
 import { promiseFromTaskEither } from '#/utils/transformations';
 import { createDefaultNote } from './fixtures/note';
 
 test('can add new note', async () => {
-  const storage = createInMemoryNoteStorage(O.none);
+  const storage = createInMemoryRepository(O.none, O.none);
 
   await expect(
     pipe(
@@ -44,7 +44,7 @@ test('can delete note', async () => {
     TE.Do,
     TE.bind('defaultNote', () => TE.fromEither(createDefaultNote())),
     TE.bind('storage', ({ defaultNote }) =>
-      TE.of(createInMemoryNoteStorage(O.some([defaultNote]))),
+      TE.of(createInMemoryRepository(O.none, O.some([defaultNote]))),
     ),
     promiseFromTaskEither,
   );
@@ -65,7 +65,7 @@ test('can edit note', async () => {
     TE.Do,
     TE.bind('defaultNote', () => TE.fromEither(createDefaultNote({ title: 'initial title' }))),
     TE.bind('storage', ({ defaultNote }) =>
-      TE.of(createInMemoryNoteStorage(O.some([defaultNote]))),
+      TE.of(createInMemoryRepository(O.none, O.some([defaultNote]))),
     ),
     promiseFromTaskEither,
   );
@@ -91,7 +91,7 @@ test('can get note details', async () => {
     TE.Do,
     TE.bind('defaultNote', () => TE.fromEither(createDefaultNote())),
     TE.bind('storage', ({ defaultNote }) =>
-      TE.of(createInMemoryNoteStorage(O.some([defaultNote]))),
+      TE.of(createInMemoryRepository(O.none, O.some([defaultNote]))),
     ),
     promiseFromTaskEither,
   );
@@ -110,7 +110,7 @@ test('can edit note content', async () => {
     TE.Do,
     TE.bind('defaultNote', () => TE.fromEither(createDefaultNote())),
     TE.bind('storage', ({ defaultNote }) =>
-      TE.of(createInMemoryNoteStorage(O.some([defaultNote]))),
+      TE.of(createInMemoryRepository(O.none, O.some([defaultNote]))),
     ),
     promiseFromTaskEither,
   );
@@ -135,7 +135,7 @@ test('can finish note', async () => {
     TE.Do,
     TE.bind('defaultNote', () => TE.fromEither(createDefaultNote({ isArchived: false }))),
     TE.bind('storage', ({ defaultNote }) =>
-      TE.of(createInMemoryNoteStorage(O.some([defaultNote]))),
+      TE.of(createInMemoryRepository(O.none, O.some([defaultNote]))),
     ),
     promiseFromTaskEither,
   );
@@ -161,7 +161,7 @@ test('can reopen note', async () => {
     TE.Do,
     TE.bind('defaultNote', () => TE.fromEither(createDefaultNote({ isArchived: true }))),
     TE.bind('storage', ({ defaultNote }) =>
-      TE.of(createInMemoryNoteStorage(O.some([defaultNote]))),
+      TE.of(createInMemoryRepository(O.none, O.some([defaultNote]))),
     ),
     promiseFromTaskEither,
   );
@@ -187,7 +187,7 @@ test('can add new note to existing note', async () => {
     TE.Do,
     TE.bind('defaultNote', () => TE.fromEither(createDefaultNote())),
     TE.bind('storage', ({ defaultNote }) =>
-      TE.of(createInMemoryNoteStorage(O.some([defaultNote]))),
+      TE.of(createInMemoryRepository(O.none, O.some([defaultNote]))),
     ),
     promiseFromTaskEither,
   );
@@ -232,7 +232,7 @@ test('can move note to another note', async () => {
       TE.fromEither(createDefaultNote({ id: 'another', parentId: O.none })),
     ),
     TE.bind('storage', ({ parentNote, childNote, anotherNote }) =>
-      TE.of(createInMemoryNoteStorage(O.some([parentNote, childNote, anotherNote]))),
+      TE.of(createInMemoryRepository(O.none, O.some([parentNote, childNote, anotherNote]))),
     ),
     promiseFromTaskEither,
   );
@@ -271,7 +271,7 @@ test('can save notes order', async () => {
     TE.bind('firstNote', () => TE.fromEither(createDefaultNote({ id: 'first' }))),
     TE.bind('secondNote', () => TE.fromEither(createDefaultNote({ id: 'second' }))),
     TE.bind('storage', ({ firstNote, secondNote }) =>
-      TE.of(createInMemoryNoteStorage(O.some([firstNote, secondNote]))),
+      TE.of(createInMemoryRepository(O.none, O.some([firstNote, secondNote]))),
     ),
     promiseFromTaskEither,
   );
