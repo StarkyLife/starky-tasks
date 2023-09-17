@@ -1,6 +1,7 @@
 import * as O from 'fp-ts/Option';
 import * as t from 'io-ts';
 import { createStringBrand } from '#/utils/brands';
+import { VaultId } from './vault';
 
 export const NoteItemId = createStringBrand('NoteItemId');
 export type NoteItemId = t.TypeOf<typeof NoteItemId>;
@@ -20,6 +21,9 @@ type NoteItemState = {
 type NoteItemRelations = {
   parentId: O.Option<NoteItemId>;
 };
+type NoteItemVault = {
+  vaultId: VaultId;
+};
 type NoteItemContent = {
   content: O.Option<string>;
 };
@@ -31,10 +35,11 @@ export type NoteItemShort = NoteItemIdStruct &
   NoteItemType &
   NoteItemTitle &
   NoteItemState &
-  NoteItemRelations;
+  NoteItemRelations &
+  NoteItemVault;
 export type NoteItemDetails = NoteItemShort & NoteItemContent & NoteItemChildren;
 
-export type NoteCreateData = NoteItemType & NoteItemTitle & NoteItemRelations;
+export type NoteCreateData = NoteItemType & NoteItemTitle & NoteItemRelations & NoteItemVault;
 export type NoteUpdateData = NoteItemIdStruct & {
   type: O.Option<NoteItemType['type']>;
   title: O.Option<string>;

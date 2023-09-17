@@ -1,4 +1,5 @@
 import * as A from 'fp-ts/Array';
+import * as E from 'fp-ts/Either';
 import { flow, constVoid, constant, pipe } from 'fp-ts/function';
 import * as M from 'fp-ts/Map';
 import * as O from 'fp-ts/Option';
@@ -28,6 +29,7 @@ import {
   initOrderStorage,
   initVaultStorage,
 } from './lib/seeds';
+import { checkParentVault } from './lib/vault-check';
 
 type InMemoryStorage = CanCreateVault &
   CanUpdateVault &
@@ -55,8 +57,13 @@ export const createInMemoryRepository = (
   return {
     createUser: (login) =>
       pipe(
-        TE.fromEither(UserId.decode(Date.now().toString() + '_' + login)),
-        TE.mapLeft(constant(new Error('User Id creation error'))),
+        TE.Do,
+        TE.flatMapEither(() =>
+          pipe(
+            UserId.decode(Date.now().toString() + '_' + login),
+            E.mapLeft(constant(new Error('User Id creation error'))),
+          ),
+        ),
         TE.map((id) => ({ id, login })),
         TE.tap((u) => TE.of(vaultStorage.usersData.set(u.id, u))),
       ),
@@ -81,8 +88,13 @@ export const createInMemoryRepository = (
       ),
     createVault: ({ name, creatorId }) =>
       pipe(
-        TE.fromEither(VaultId.decode(Date.now().toString() + '_' + name)),
-        TE.mapLeft(constant(new Error('Vault Id creation error'))),
+        TE.Do,
+        TE.flatMapEither(() =>
+          pipe(
+            VaultId.decode(Date.now().toString() + '_' + name),
+            E.mapLeft(constant(new Error('Vault Id creation error'))),
+          ),
+        ),
         TE.map((id) => ({ id, name })),
         TE.tap((v) => TE.of(vaultStorage.vaultsData.set(v.id, v))),
         TE.tap((vault) =>
@@ -126,15 +138,28 @@ export const createInMemoryRepository = (
       TE.of,
       TE.flatMap((id) => pipe(noteStorage.data.get(id), TE.fromNullable(new Error('Not found')))),
     ),
-    createNote: ({ type, title, parentId }) =>
+    createNote: ({ type, title, parentId, vaultId }) =>
       pipe(
-        TE.fromEither(NoteItemId.decode(Date.now().toString() + '_' + title)),
-        TE.mapLeft(constant(new Error('Note Id creation error'))),
+        TE.Do,
+        TE.tap(() =>
+          pipe(
+            parentId,
+            O.map(checkParentVault(noteStorage.data)(vaultId)),
+            O.getOrElse(constant(TE.right(constVoid()))),
+          ),
+        ),
+        TE.flatMapEither(() =>
+          pipe(
+            NoteItemId.decode(Date.now().toString() + '_' + title),
+            E.mapLeft(constant(new Error('Note Id creation error'))),
+          ),
+        ),
         TE.map((id) => ({
           id,
           type,
           title,
           parentId,
+          vaultId,
           isArchived: false,
         })),
         TE.tap((item) => TE.of(noteStorage.data.set(item.id, item))),
@@ -143,6 +168,13 @@ export const createInMemoryRepository = (
       pipe(
         TE.Do,
         TE.flatMap(() => pipe(noteStorage.data.get(id), TE.fromNullable(new Error('Not found')))),
+        TE.tap((note) =>
+          pipe(
+            O.flatten(parentId),
+            O.map(checkParentVault(noteStorage.data)(note.vaultId)),
+            O.getOrElse(constant(TE.right(constVoid()))),
+          ),
+        ),
         TE.map(
           (existing): NoteItemShort => ({
             ...existing,

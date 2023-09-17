@@ -19,11 +19,16 @@ import { promiseFromTaskEither } from '#/utils/transformations';
 import { createDefaultNote } from './fixtures/note';
 
 test('can add new note', async () => {
-  const storage = createInMemoryRepository(O.none, O.none);
+  const { defaultNote, storage } = await pipe(
+    TE.Do,
+    TE.bind('defaultNote', () => TE.fromEither(createDefaultNote())),
+    TE.bind('storage', () => TE.of(createInMemoryRepository(O.none, O.none))),
+    promiseFromTaskEither,
+  );
 
   await expect(
     pipe(
-      { type: 'task', title: 'new task title', parentId: O.none },
+      { type: 'task', title: 'new task title', parentId: O.none, vaultId: defaultNote.vaultId },
       addNoteUseCase(storage),
       TE.map(constant({ parentId: O.none })),
       TE.flatMap(getNotesUseCase(storage)),
@@ -36,6 +41,7 @@ test('can add new note', async () => {
       title: 'new task title',
       isArchived: false,
       parentId: O.none,
+      vaultId: defaultNote.vaultId,
     },
   ]);
 });
@@ -223,7 +229,12 @@ test('can add new note to existing note', async () => {
   );
 
   await pipe(
-    { type: 'note', title: 'new note title', parentId: O.some(defaultNote.id) },
+    {
+      type: 'note',
+      title: 'new note title',
+      parentId: O.some(defaultNote.id),
+      vaultId: defaultNote.vaultId,
+    },
     addNoteUseCase(storage),
     promiseFromTaskEither,
   );
@@ -240,6 +251,7 @@ test('can add new note to existing note', async () => {
         title: 'new note title',
         isArchived: false,
         parentId: O.some(defaultNote.id),
+        vaultId: defaultNote.vaultId,
       },
     ],
   });
