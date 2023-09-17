@@ -4,6 +4,7 @@ import * as TE from 'fp-ts/TaskEither';
 import {
   addNoteUseCase,
   archiveNoteUseCase,
+  changeNoteTypeUseCase,
   changeNotesOrderUseCase,
   deleteNoteUseCase,
   editNoteContentUseCase,
@@ -63,7 +64,9 @@ test('can delete note', async () => {
 test('can edit note', async () => {
   const { defaultNote, storage } = await pipe(
     TE.Do,
-    TE.bind('defaultNote', () => TE.fromEither(createDefaultNote({ title: 'initial title' }))),
+    TE.bind('defaultNote', () =>
+      TE.fromEither(createDefaultNote({ title: 'initial title', type: 'note' })),
+    ),
     TE.bind('storage', ({ defaultNote }) =>
       TE.of(createInMemoryRepository(O.none, O.some([defaultNote]))),
     ),
@@ -72,7 +75,7 @@ test('can edit note', async () => {
 
   await expect(
     pipe(
-      { id: defaultNote.id, title: 'editted title' },
+      { ...defaultNote, title: 'editted title', type: 'task' },
       editNoteUseCase(storage),
       TE.map(constant({ parentId: O.none })),
       TE.flatMap(getNotesUseCase(storage)),
@@ -81,6 +84,7 @@ test('can edit note', async () => {
   ).resolves.toEqual([
     {
       ...defaultNote,
+      type: 'task',
       title: 'editted title',
     },
   ]);
@@ -178,6 +182,32 @@ test('can reopen note', async () => {
     {
       ...defaultNote,
       isArchived: false,
+    },
+  ]);
+});
+
+test('can change note type', async () => {
+  const { defaultNote, storage } = await pipe(
+    TE.Do,
+    TE.bind('defaultNote', () => TE.fromEither(createDefaultNote({ type: 'note' }))),
+    TE.bind('storage', ({ defaultNote }) =>
+      TE.of(createInMemoryRepository(O.none, O.some([defaultNote]))),
+    ),
+    promiseFromTaskEither,
+  );
+
+  await expect(
+    pipe(
+      { id: defaultNote.id, type: 'task' },
+      changeNoteTypeUseCase(storage),
+      TE.map(constant({ parentId: O.none })),
+      TE.flatMap(getNotesUseCase(storage)),
+      promiseFromTaskEither,
+    ),
+  ).resolves.toEqual([
+    {
+      ...defaultNote,
+      type: 'task',
     },
   ]);
 });

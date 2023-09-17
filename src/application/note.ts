@@ -2,12 +2,13 @@ import { pipe } from 'fp-ts/function';
 import * as O from 'fp-ts/Option';
 import * as TE from 'fp-ts/TaskEither';
 import {
-  NoteTitleUpdateData,
   NoteItemDetails,
   noteUpdateDataDefaults,
   NoteRelationUpdateData,
   NoteSearchCriteria,
   NoteItemId,
+  NoteItemShort,
+  NoteTypeUpdateData,
 } from '#/application/lib/data/note-item';
 import {
   CanUpdateNote,
@@ -48,12 +49,21 @@ export const getNoteDetailsUseCase =
 
 /* Update */
 
-export const editNoteContentUseCase = (deps: CanUpdateNoteContent) => deps.updateNoteContent;
-
 export const editNoteUseCase =
   (deps: CanUpdateNote) =>
-  ({ id, title }: NoteTitleUpdateData) =>
-    deps.updateNote({ ...noteUpdateDataDefaults, id, title: O.some(title) });
+  ({ id, type, title, isArchived, parentId }: NoteItemShort) =>
+    deps.updateNote({
+      id,
+      title: O.some(title),
+      type: O.some(type),
+      isArchived: O.some(isArchived),
+      parentId: O.some(parentId),
+    });
+
+export const changeNoteTypeUseCase =
+  (deps: CanUpdateNote) =>
+  ({ id, type }: NoteTypeUpdateData) =>
+    deps.updateNote({ ...noteUpdateDataDefaults, id, type: O.some(type) });
 
 export const moveNoteUseCase =
   (deps: CanUpdateNote) =>
@@ -68,6 +78,8 @@ export const restoreNoteUseCase = (deps: CanUpdateNote) => (id: NoteItemId) =>
 
 export const changeNotesOrderUseCase = (deps: CanUpdateNotesChildrenOrder) =>
   deps.updateNotesChildrenOrder;
+
+export const editNoteContentUseCase = (deps: CanUpdateNoteContent) => deps.updateNoteContent;
 
 /* Delete */
 

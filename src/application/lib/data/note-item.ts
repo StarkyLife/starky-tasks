@@ -36,13 +36,14 @@ export type NoteItemDetails = NoteItemShort & NoteItemContent & NoteItemChildren
 
 export type NoteCreateData = NoteItemType & NoteItemTitle & NoteItemRelations;
 export type NoteUpdateData = NoteItemIdStruct & {
+  type: O.Option<NoteItemType['type']>;
   title: O.Option<string>;
   isArchived: O.Option<boolean>;
   parentId: O.Option<O.Option<NoteItemId>>;
 };
 
-export type NoteTitleUpdateData = NoteItemIdStruct & NoteItemTitle;
 export type NoteRelationUpdateData = NoteItemIdStruct & NoteItemRelations;
+export type NoteTypeUpdateData = NoteItemIdStruct & NoteItemType;
 export type NoteContentUpdateData = NoteItemIdStruct & {
   content: string;
 };
@@ -53,6 +54,7 @@ export type NoteChildrenOrderChangeData = {
 };
 
 export const noteUpdateDataDefaults: Omit<NoteUpdateData, 'id'> = {
+  type: O.none,
   title: O.none,
   isArchived: O.none,
   parentId: O.none,

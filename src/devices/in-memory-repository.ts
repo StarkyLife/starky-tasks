@@ -139,13 +139,14 @@ export const createInMemoryRepository = (
         })),
         TE.tap((item) => TE.of(noteStorage.data.set(item.id, item))),
       ),
-    updateNote: ({ id, title, isArchived, parentId }) =>
+    updateNote: ({ id, type, title, isArchived, parentId }) =>
       pipe(
         TE.Do,
         TE.flatMap(() => pipe(noteStorage.data.get(id), TE.fromNullable(new Error('Not found')))),
         TE.map(
           (existing): NoteItemShort => ({
             ...existing,
+            type: pipe(type, O.getOrElse(constant(existing.type))),
             title: pipe(title, O.getOrElse(constant(existing.title))),
             isArchived: pipe(isArchived, O.getOrElse(constant(existing.isArchived))),
             parentId: pipe(parentId, O.getOrElse(constant(existing.parentId))),
