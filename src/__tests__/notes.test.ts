@@ -47,24 +47,36 @@ test('can add new note', async () => {
 });
 
 test('can delete note', async () => {
-  const { defaultNote, storage } = await pipe(
+  const { parentNote, storage } = await pipe(
     TE.Do,
-    TE.bind('defaultNote', () => TE.fromEither(createDefaultNote())),
-    TE.bind('storage', ({ defaultNote }) =>
-      TE.of(createInMemoryRepository(O.none, O.some([defaultNote]))),
+    TE.bind('parentNote', () =>
+      TE.fromEither(createDefaultNote({ id: 'parent', parentId: O.none })),
+    ),
+    TE.bind('childNote', ({ parentNote }) =>
+      TE.fromEither(createDefaultNote({ id: 'child', parentId: O.some(parentNote.id) })),
+    ),
+    TE.bind('storage', ({ parentNote, childNote }) =>
+      TE.of(createInMemoryRepository(O.none, O.some([parentNote, childNote]))),
     ),
     promiseFromTaskEither,
   );
 
   await expect(
     pipe(
-      defaultNote.id,
+      parentNote.id,
       deleteNoteUseCase(storage),
       TE.map(constant({ parentId: O.none })),
       TE.flatMap(getNotesUseCase(storage)),
+      TE.bindTo('parentNotes'),
+      TE.bind('childNotes', () =>
+        pipe({ parentId: O.some(parentNote.id) }, getNotesUseCase(storage)),
+      ),
       promiseFromTaskEither,
     ),
-  ).resolves.toEqual([]);
+  ).resolves.toEqual({
+    parentNotes: [],
+    childNotes: [],
+  });
 });
 
 test('can edit note', async () => {

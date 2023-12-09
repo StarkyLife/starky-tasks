@@ -1,8 +1,8 @@
 import * as A from 'fp-ts/Array';
 import * as E from 'fp-ts/Either';
 import { flow, constVoid, constant, pipe } from 'fp-ts/function';
-import * as M from 'fp-ts/Map';
 import * as IO from 'fp-ts/IO';
+import * as M from 'fp-ts/Map';
 import * as O from 'fp-ts/Option';
 import * as S from 'fp-ts/string';
 import * as TE from 'fp-ts/TaskEither';
@@ -16,6 +16,7 @@ import {
   CanGetNoteContent,
   CanGetNotesChildrenOrder,
   CanRemoveNote,
+  CanRemoveVault,
   CanUpdateNote,
   CanUpdateNoteContent,
   CanUpdateNotesChildrenOrder,
@@ -36,6 +37,7 @@ type InMemoryStorage = CanCreateVault &
   CanUpdateVault &
   CanCreateUser &
   CanFindVaults &
+  CanRemoveVault &
   CanFindNotes &
   CanGetNoteById &
   CanCreateNote &
@@ -54,6 +56,29 @@ export const createInMemoryRepository = (
   const noteStorage = initNoteStorage(noteSeed);
   const contentStorage = initContentStorage();
   const orderStorage = initOrderStorage();
+
+  const clearNoteData = (noteId: NoteItemId): TE.TaskEither<Error, void> =>
+    pipe(
+      TE.Do,
+      TE.tapIO(() => IO.of(noteStorage.data.delete(noteId))),
+      TE.tapIO(() => IO.of(contentStorage.data.delete(noteId))),
+      TE.tapIO(() => IO.of(orderStorage.data.delete(noteId))),
+      TE.map(constVoid),
+    );
+
+  const removeNoteCascade = (noteId: NoteItemId): TE.TaskEither<Error, void> =>
+    pipe(
+      clearNoteData(noteId),
+      TE.tap(() =>
+        pipe(
+          Array.from(noteStorage.data.values()),
+          A.filter(({ parentId }) => O.getEq(S.Eq).equals(parentId, O.some(noteId))),
+          A.map(({ id }) => id),
+          A.map(removeNoteCascade),
+          A.sequence(TE.ApplicativeSeq),
+        ),
+      ),
+    );
 
   return {
     createUser: (login) =>
@@ -129,6 +154,38 @@ export const createInMemoryRepository = (
         ),
         TE.tap((item) => TE.of(vaultStorage.vaultsData.set(item.id, item))),
       ),
+    removeVault: (id) =>
+      pipe(
+        TE.Do,
+        TE.tapIO(() => IO.of(vaultStorage.vaultsData.delete(id))),
+        TE.tapIO(() =>
+          IO.of(
+            pipe(
+              Array.from(vaultStorage.userVaultRelation.entries()),
+              A.findFirst(([, vaultIds]) => vaultIds.includes(id)),
+              O.map(([userId, vaultIds]) =>
+                pipe(
+                  vaultIds,
+                  A.filter((existingId) => existingId !== id),
+                  (newVaultIds) => vaultStorage.userVaultRelation.set(userId, newVaultIds),
+                  constVoid,
+                ),
+              ),
+              O.getOrElse(constVoid),
+            ),
+          ),
+        ),
+        TE.tap(() =>
+          pipe(
+            Array.from(noteStorage.data.values()),
+            A.filter(({ vaultId }) => S.Eq.equals(vaultId, id)),
+            A.map(({ id }) => id),
+            A.map(clearNoteData),
+            A.sequence(TE.ApplicativeSeq),
+          ),
+        ),
+        TE.map(constVoid),
+      ),
     findNotes: (criteria) =>
       pipe(
         TE.Do,
@@ -187,27 +244,7 @@ export const createInMemoryRepository = (
         ),
         TE.tap((item) => TE.of(noteStorage.data.set(item.id, item))),
       ),
-    removeNote: (id) => {
-      const removeAction = (id: NoteItemId): TE.TaskEither<Error, void> =>
-        pipe(
-          TE.Do,
-          TE.tapIO(() => IO.of(noteStorage.data.delete(id))),
-          TE.tapIO(() => IO.of(contentStorage.data.delete(id))),
-          TE.tapIO(() => IO.of(orderStorage.data.delete(id))),
-          TE.tap(() =>
-            pipe(
-              Array.from(noteStorage.data.values()),
-              A.filter(({ parentId }) => O.getEq(S.Eq).equals(parentId, parentId)),
-              A.map(({ id }) => id),
-              A.map(removeAction),
-              A.sequence(TE.ApplicativeSeq),
-            ),
-          ),
-          TE.map(constVoid),
-        );
-
-      return removeAction(id);
-    },
+    removeNote: removeNoteCascade,
     getNoteContent: flow(
       TE.of,
       TE.map((id) => pipe(contentStorage.data.get(id), O.fromNullable)),
