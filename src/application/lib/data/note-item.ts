@@ -18,7 +18,7 @@ type NoteItemTitle = {
 type NoteItemState = {
   isArchived: boolean;
 };
-type NoteItemRelations = {
+type NoteItemParent = {
   parentId: O.Option<NoteItemId>;
 };
 type NoteItemVault = {
@@ -35,11 +35,11 @@ export type NoteItemShort = NoteItemIdStruct &
   NoteItemType &
   NoteItemTitle &
   NoteItemState &
-  NoteItemRelations &
+  NoteItemParent &
   NoteItemVault;
 export type NoteItemDetails = NoteItemShort & NoteItemContent & NoteItemChildren;
 
-export type NoteCreateData = NoteItemType & NoteItemTitle & NoteItemRelations & NoteItemVault;
+export type NoteCreateData = NoteItemType & NoteItemTitle & NoteItemParent & NoteItemVault;
 export type NoteUpdateData = NoteItemIdStruct & {
   type: O.Option<NoteItemType['type']>;
   title: O.Option<string>;
@@ -47,12 +47,12 @@ export type NoteUpdateData = NoteItemIdStruct & {
   parentId: O.Option<O.Option<NoteItemId>>;
 };
 
-export type NoteRelationUpdateData = NoteItemIdStruct & NoteItemRelations;
+export type NoteRelationUpdateData = NoteItemIdStruct & NoteItemParent;
 export type NoteTypeUpdateData = NoteItemIdStruct & NoteItemType;
 export type NoteContentUpdateData = NoteItemIdStruct & {
   content: string;
 };
-export type NoteSearchCriteria = NoteItemRelations;
+export type NoteSearchCriteria = NoteItemParent;
 export type NoteChildrenOrderChangeData = {
   id: O.Option<NoteItemId>;
   childrenIdsInOrder: NoteItemId[];

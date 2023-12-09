@@ -2,6 +2,7 @@ import * as A from 'fp-ts/Array';
 import * as E from 'fp-ts/Either';
 import { flow, constVoid, constant, pipe } from 'fp-ts/function';
 import * as M from 'fp-ts/Map';
+import * as IO from 'fp-ts/IO';
 import * as O from 'fp-ts/Option';
 import * as S from 'fp-ts/string';
 import * as TE from 'fp-ts/TaskEither';
@@ -186,14 +187,27 @@ export const createInMemoryRepository = (
         ),
         TE.tap((item) => TE.of(noteStorage.data.set(item.id, item))),
       ),
-    removeNote: (id) =>
-      pipe(
-        TE.Do,
-        TE.map(() => noteStorage.data.delete(id)),
-        TE.map(() => contentStorage.data.delete(id)),
-        TE.map(() => orderStorage.data.delete(id)),
-        TE.map(constVoid),
-      ),
+    removeNote: (id) => {
+      const removeAction = (id: NoteItemId): TE.TaskEither<Error, void> =>
+        pipe(
+          TE.Do,
+          TE.tapIO(() => IO.of(noteStorage.data.delete(id))),
+          TE.tapIO(() => IO.of(contentStorage.data.delete(id))),
+          TE.tapIO(() => IO.of(orderStorage.data.delete(id))),
+          TE.tap(() =>
+            pipe(
+              Array.from(noteStorage.data.values()),
+              A.filter(({ parentId }) => O.getEq(S.Eq).equals(parentId, parentId)),
+              A.map(({ id }) => id),
+              A.map(removeAction),
+              A.sequence(TE.ApplicativeSeq),
+            ),
+          ),
+          TE.map(constVoid),
+        );
+
+      return removeAction(id);
+    },
     getNoteContent: flow(
       TE.of,
       TE.map((id) => pipe(contentStorage.data.get(id), O.fromNullable)),
